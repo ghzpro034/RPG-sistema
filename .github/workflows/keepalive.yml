@@ -1,0 +1,23 @@
+# Evita que o Supabase grátis pause depois de 7 dias sem uso.
+# Precisa dos secrets SUPABASE_URL e SUPABASE_PUBLISHABLE_KEY (Settings → Secrets and variables → Actions).
+# A resposta é "sem permissão" (quem não está logado não lê nada), mas a consulta chega no banco e conta como uso.
+name: keepalive
+on:
+  schedule:
+    - cron: "0 12 */3 * *" # a cada 3 dias, 9h em Brasília
+  workflow_dispatch:
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Consulta o banco do Supabase
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+        run: |
+          codigo=$(curl -sS -o /dev/null -w "%{http_code}" \
+            "$SUPABASE_URL/rest/v1/campanhas?select=id&limit=1" \
+            -H "apikey: $SUPABASE_PUBLISHABLE_KEY")
+          echo "Supabase respondeu $codigo"
+          # 5xx ou sem resposta: o projeto pode estar pausado
+          test "$codigo" -lt 500

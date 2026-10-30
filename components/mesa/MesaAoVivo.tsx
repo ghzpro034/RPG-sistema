@@ -10,7 +10,9 @@ import { Resultado } from "@/components/ficha/rolador";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { corDoEstado, estadoDe, fundoDoEstado } from "@/lib/estado";
 import { LIMITE_CONGELADO, type Personagem, type Rolagem } from "@/lib/ficha-tipos";
-import type { CardPersonagem, DadosMesa } from "@/lib/mesa";
+import { EntregarItem } from "@/components/mesa/EntregarItem";
+import { HistoricoAlteracoes } from "@/components/mesa/HistoricoAlteracoes";
+import type { Alteracao, CardPersonagem, DadosMesa } from "@/lib/mesa";
 import { createClient } from "@/lib/supabase/client";
 
 function mesclarRolagem(lista: Rolagem[], rolagem: Rolagem) {
@@ -127,6 +129,7 @@ export function MesaAoVivo({ campanhaId, inicial }: { campanhaId: string; inicia
   const router = useRouter();
   const [personagens, setPersonagens] = useState(inicial.personagens);
   const [rolagens, setRolagens] = useState(inicial.rolagens);
+  const [alteracoes, setAlteracoes] = useState(inicial.alteracoes);
   const confirmados = useRef(inicial.personagens);
   const timers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
 
@@ -157,6 +160,22 @@ export function MesaAoVivo({ campanhaId, inicial }: { campanhaId: string; inicia
         { event: "*", schema: "public", table: "rolagens", filter: `campanha_id=eq.${campanhaId}` },
         (payload) => {
           if (payload.eventType !== "DELETE") setRolagens((lista) => mesclarRolagem(lista, payload.new as Rolagem));
+        },
+      )
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "alteracoes", filter: `campanha_id=eq.${campanhaId}` },
+        (payload) => {
+          const nova = payload.new as Alteracao;
+          setAlteracoes((lista) => [nova, ...lista].slice(0, 30));
+          // item entregue ou removido: atualiza a contagem no card
+          if (nova.tabela === "inventario" && (nova.de === null || nova.para === null)) {
+            const delta = nova.de === null ? 1 : -1;
+            const mudar = (lista: CardPersonagem[]) =>
+              lista.map((p) => (p.id === nova.personagem_id ? { ...p, itens: Math.max(0, p.itens + delta) } : p));
+            confirmados.current = mudar(confirmados.current);
+            setPersonagens(mudar);
+          }
         },
       )
       .subscribe();
@@ -221,8 +240,10 @@ export function MesaAoVivo({ campanhaId, inicial }: { campanhaId: string; inicia
           </p>
         )}
       </div>
-      <aside className="lg:sticky lg:top-4 lg:self-start">
+      <aside className="flex flex-col gap-8">
+        <EntregarItem personagens={personagens} itens={inicial.itens} />
         <FeedRolagens rolagens={rolagens} nomes={nomes} />
+        <HistoricoAlteracoes alteracoes={alteracoes} nomes={nomes} autores={inicial.autores} />
       </aside>
     </div>
   );

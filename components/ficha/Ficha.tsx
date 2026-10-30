@@ -5,8 +5,11 @@ import { Atributos } from "@/components/ficha/Atributos";
 import { Baralho } from "@/components/ficha/Baralho";
 import { Cabecalho } from "@/components/ficha/Cabecalho";
 import { Conhecimento } from "@/components/ficha/Conhecimento";
+import { useConteudoAoVivo } from "@/components/ficha/conteudo";
 import { FichaProvider, useFicha, type StatusSalvamento } from "@/components/ficha/contexto";
+import { EnganarMorte } from "@/components/ficha/EnganarMorte";
 import { Inventario } from "@/components/ficha/Inventario";
+import { MemoriasGracas } from "@/components/ficha/MemoriasGracas";
 import { PainelResultado, RoladorProvider } from "@/components/ficha/rolador";
 import { Travas } from "@/components/ficha/Travas";
 import { Vitais } from "@/components/ficha/Vitais";
@@ -42,6 +45,74 @@ function BarraEdicao() {
   );
 }
 
+// arquétipo e trauma no Baralho; habilidade e revolta na aba própria, como no Canva
+const TIPOS_BARALHO = ["arquetipo", "trauma"] as const;
+const TIPOS_HABILIDADE = ["habilidade", "revolta"] as const;
+
+function Conteudo({ dados }: { dados: DadosFicha }) {
+  const { personagem, souMestre } = useFicha();
+  const ao = useConteudoAoVivo(personagem.id, dados);
+  // remonta o inventário quando o banco muda (item entregue pelo mestre, por exemplo)
+  const chaveInventario = ao.inventario.map((i) => `${i.id}:${i.quantidade}:${i.memorias_desbloqueadas}`).join("|");
+
+  return (
+    <>
+      <Cabecalho retratoInicial={dados.retratoUrl} cartas={ao.cartas} />
+      <Vitais />
+      <Atributos inicial={dados.atributos} />
+
+      <Tabs defaultValue="baralho" className="gap-4">
+        <TabsList className="h-11! w-full justify-start overflow-x-auto [scrollbar-width:none]">
+          <TabsTrigger value="baralho" className="flex-none px-3 text-base">Baralho</TabsTrigger>
+          <TabsTrigger value="inventario" className="flex-none px-3 text-base">Inventário</TabsTrigger>
+          <TabsTrigger value="habilidade" className="flex-none px-3 text-base">Habilidade e Revolta</TabsTrigger>
+          <TabsTrigger value="conhecimento" className="flex-none px-3 text-base">Conhecimento</TabsTrigger>
+          <TabsTrigger value="memorias" className="flex-none px-3 text-base">Memórias e Graças</TabsTrigger>
+        </TabsList>
+        <TabsContent value="baralho">
+          <Baralho
+            personagemId={personagem.id}
+            cartas={ao.cartas}
+            tipos={[...TIPOS_BARALHO]}
+            vazio="O mestre ainda não te deu nenhuma carta."
+            souMestre={souMestre}
+            catalogo={dados.catalogoCartas}
+            aoMudar={ao.recarregarCartas}
+          />
+        </TabsContent>
+        <TabsContent value="inventario">
+          <Inventario key={chaveInventario} inicial={ao.inventario} />
+        </TabsContent>
+        <TabsContent value="habilidade" className="flex flex-col gap-5">
+          <Baralho
+            personagemId={personagem.id}
+            cartas={ao.cartas}
+            tipos={[...TIPOS_HABILIDADE]}
+            vazio="Nenhuma habilidade ou revolta ainda."
+            souMestre={souMestre}
+            catalogo={dados.catalogoCartas}
+            aoMudar={ao.recarregarCartas}
+          />
+          <EnganarMorte />
+        </TabsContent>
+        <TabsContent value="conhecimento">
+          <Conhecimento />
+        </TabsContent>
+        <TabsContent value="memorias">
+          <MemoriasGracas
+            personagemId={personagem.id}
+            inventario={ao.inventario}
+            gracas={ao.gracas}
+            souMestre={souMestre}
+            aoMudarInventario={ao.recarregarInventario}
+            aoMudarGracas={ao.recarregarGracas}
+          />
+        </TabsContent>
+      </Tabs>
+    </>
+  );
+}
+
 export function Ficha({ dados }: { dados: DadosFicha }) {
   return (
     <FichaProvider inicial={dados.personagem} souMestre={dados.souMestre}>
@@ -50,26 +121,7 @@ export function Ficha({ dados }: { dados: DadosFicha }) {
         <div className="flex flex-col gap-8 pb-28">
           <BarraEdicao />
           {dados.souMestre && <Travas />}
-          <Cabecalho retratoInicial={dados.retratoUrl} cartas={dados.cartas} />
-          <Vitais />
-          <Atributos inicial={dados.atributos} />
-
-          <Tabs defaultValue="baralho" className="gap-4">
-            <TabsList className="h-11! w-full">
-              <TabsTrigger value="baralho" className="text-base">Baralho</TabsTrigger>
-              <TabsTrigger value="inventario" className="text-base">Inventário</TabsTrigger>
-              <TabsTrigger value="conhecimento" className="text-base">Conhecimento</TabsTrigger>
-            </TabsList>
-            <TabsContent value="baralho">
-              <Baralho cartas={dados.cartas} />
-            </TabsContent>
-            <TabsContent value="inventario">
-              <Inventario inicial={dados.inventario} />
-            </TabsContent>
-            <TabsContent value="conhecimento">
-              <Conhecimento />
-            </TabsContent>
-          </Tabs>
+          <Conteudo dados={dados} />
         </div>
         <PainelResultado />
       </RoladorProvider>

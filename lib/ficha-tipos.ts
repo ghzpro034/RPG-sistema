@@ -42,24 +42,38 @@ export type Carta = {
   citacao: string | null;
   efeitos: string[];
   custo: string | null;
+  imagem_path: string | null;
   imagemUrl: string | null;
 };
 
 export type Raridade = "comum" | "incomum" | "unico";
 
+export type ItemCatalogo = {
+  id: string;
+  nome: string;
+  raridade: Raridade;
+  efeito: string | null;
+  descricao: string | null;
+  max_memorias: number;
+  imagem_path: string | null;
+  imagemUrl: string | null;
+};
+
 export type ItemInventario = {
   id: string;
   quantidade: number;
   memorias_desbloqueadas: number;
-  item: {
-    id: string;
-    nome: string;
-    raridade: Raridade;
-    efeito: string | null;
-    descricao: string | null;
-    max_memorias: number;
-    imagemUrl: string | null;
-  };
+  item: ItemCatalogo;
+};
+
+export type FormaGraca = "circulo" | "quadrado" | "triangulo" | "estrela";
+
+export type Graca = {
+  id: string;
+  personagem_id: string;
+  forma: FormaGraca;
+  nome: string | null;
+  descricao: string | null;
 };
 
 export type Rolagem = {
@@ -86,6 +100,9 @@ export type DadosFicha = {
   atributos: Atributo[];
   cartas: Carta[];
   inventario: ItemInventario[];
+  gracas: Graca[];
+  /** cartas do catálogo da campanha, para o mestre dar ao personagem (vazio para o player) */
+  catalogoCartas: Carta[];
   souMestre: boolean;
 };
 
