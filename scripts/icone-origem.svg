@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <!-- Ícone provisório do A Silent Machine: engrenagem dourada com o losango do PE. Troque pelo símbolo oficial. -->
+  <rect width="1024" height="1024" fill="#000"/>
+  <path d="M455.3,186.9 L468.1,114.4 L555.9,114.4 L568.7,186.9 L657.2,215.7 L710.2,164.5 L781.2,216.1 L749.0,282.3 L803.6,357.6 L876.6,347.4 L903.7,430.9 L838.7,465.5 L838.7,558.5 L903.7,593.1 L876.6,676.6 L803.6,666.4 L749.0,741.7 L781.2,807.9 L710.2,859.5 L657.2,808.3 L568.7,837.1 L555.9,909.6 L468.1,909.6 L455.3,837.1 L366.8,808.3 L313.8,859.5 L242.8,807.9 L275.0,741.7 L220.4,666.4 L147.4,676.6 L120.3,593.1 L185.3,558.5 L185.3,465.5 L120.3,430.9 L147.4,347.4 L220.4,357.6 L275.0,282.3 L242.8,216.1 L313.8,164.5 L366.8,215.7 Z" fill="#E8A930"/>
+  <circle cx="512" cy="512" r="250" fill="#000"/>
+  <circle cx="512" cy="512" r="215" fill="none" stroke="#E8A930" stroke-width="18"/>
+  <rect x="402" y="402" width="220" height="220" transform="rotate(45 512 512)" fill="#E8A930"/>
+  <rect x="467" y="467" width="90" height="90" transform="rotate(45 512 512)" fill="#000"/>
+</svg>

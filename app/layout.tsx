@@ -1,5 +1,6 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Cinzel, Cormorant_Garamond } from "next/font/google";
+import { RegistrarServiceWorker } from "@/components/RegistrarServiceWorker";
 import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
@@ -19,6 +20,14 @@ const cormorant = Cormorant_Garamond({
 export const metadata: Metadata = {
   title: "A Silent Machine",
   description: "Fichas da mesa de A Silent Machine",
+  applicationName: "A Silent Machine",
+  // iPhone: "Adicionar à Tela de Início" abre em tela cheia, com a barra de status preta
+  appleWebApp: { capable: true, title: "Silent Machine", statusBarStyle: "black" },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#000000",
+  colorScheme: "dark",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
@@ -30,6 +39,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="min-h-full flex flex-col">
         {children}
         <Toaster theme="dark" richColors />
+        <RegistrarServiceWorker />
       </body>
     </html>
   );

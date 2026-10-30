@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#000000" />
+    <title>Sem conexão · A Silent Machine</title>
+    <style>
+      :root { color-scheme: dark; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 16px;
+        padding: 24px;
+        box-sizing: border-box;
+        background: #000;
+        color: #f4f4f4;
+        font-family: Georgia, "Times New Roman", serif;
+        text-align: center;
+      }
+      img { width: 96px; height: 96px; }
+      h1 { margin: 0; font-size: 22px; letter-spacing: 0.25em; text-transform: uppercase; color: #e8a930; font-weight: normal; }
+      p { margin: 0; max-width: 28em; font-size: 18px; line-height: 1.4; color: #b5b5b5; }
+      button {
+        margin-top: 8px;
+        min-height: 44px;
+        padding: 0 24px;
+        border: 0;
+        border-radius: 8px;
+        background: #e8a930;
+        color: #111;
+        font: inherit;
+        font-size: 17px;
+        letter-spacing: 0.08em;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <img src="/icones/icone-192.png" alt="" />
+    <h1>Sem conexão</h1>
+    <p>A ficha precisa de internet para carregar e para acompanhar a mesa ao vivo. Confira o Wi-Fi ou os dados móveis.</p>
+    <button type="button" onclick="location.reload()">Tentar de novo</button>
+  </body>
+</html>
