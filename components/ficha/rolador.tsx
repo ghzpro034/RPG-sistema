@@ -122,8 +122,9 @@ export function RoladorProvider({ campanhaAtual, children }: { campanhaAtual: st
 
 // Botões do Canva ao lado do losango: Reforçar arma a próxima rolagem, Refazer repete a última.
 export function AcoesPE() {
-  const { personagem } = useFicha();
+  const { personagem, morto } = useFicha();
   const { reforcar, setReforcar, ultima, refazer, rolando } = useRolador();
+  if (morto) return null;
   return (
     <div className="flex flex-col gap-1">
       <button

@@ -19,6 +19,7 @@ const CAMPOS: Record<string, string> = {
   enganou_morte: "Enganou a morte",
   travas: "Travas",
   retrato_path: "Retrato",
+  morto_em: "Morte",
 };
 
 const CURTOS = new Set(["vida", "vida_max", "defesa", "corrupcao", "congelado", "dentes", "pe", "pe_max", "nivel"]);
@@ -34,6 +35,7 @@ function descrever(a: Alteracao) {
   const rotulo = CAMPOS[a.campo];
   if (!rotulo) return null;
   if (a.campo === "enganou_morte") return { campo: rotulo, mudanca: a.para === "true" ? "usado" : "devolvido" };
+  if (a.campo === "morto_em") return { campo: rotulo, mudanca: a.para ? "morreu" : "voltou do memorial" };
   return { campo: rotulo, mudanca: CURTOS.has(a.campo) ? `${a.de} → ${a.para}` : "alterado" };
 }
 

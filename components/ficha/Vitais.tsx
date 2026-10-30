@@ -22,7 +22,7 @@ function Rotulo({ children, className }: { children: React.ReactNode; className?
 
 // Coluna da esquerda da ficha: vida, estado, corrupção e congelado.
 export function Vitais() {
-  const { personagem: p, editando, travado, salvarDepois } = useFicha();
+  const { personagem: p, editando, travado, salvarDepois, morto } = useFicha();
   const estado = estadoDe(p.vida);
   const porcentagem = Math.max(0, Math.min(100, (p.vida / p.vida_max) * 100));
   const vidaMaxTravada = travado("vida_max");
@@ -43,7 +43,7 @@ export function Vitais() {
                 variant="outline"
                 className="size-11"
                 aria-label="Diminuir vida"
-                disabled={p.vida <= 0}
+                disabled={morto || p.vida <= 0}
                 onClick={() => salvarDepois({ vida: p.vida - 1 })}
               >
                 <Minus />
@@ -58,7 +58,7 @@ export function Vitais() {
                 variant="outline"
                 className="size-11"
                 aria-label="Aumentar vida"
-                disabled={p.vida >= p.vida_max}
+                disabled={morto || p.vida >= p.vida_max}
                 onClick={() => salvarDepois({ vida: p.vida + 1 })}
               >
                 <Plus />

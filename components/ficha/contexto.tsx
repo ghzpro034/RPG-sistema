@@ -10,6 +10,8 @@ export type StatusSalvamento = "ocioso" | "salvando" | "salvo" | "erro";
 type Contexto = {
   personagem: Personagem;
   souMestre: boolean;
+  /** ficha no memorial: tudo só leitura */
+  morto: boolean;
   editando: boolean;
   setEditando: (editando: boolean) => void;
   status: StatusSalvamento;
@@ -133,9 +135,10 @@ export function FichaProvider({
     };
   }, [supabase, inicial.id, aplicarDoServidor]);
 
+  const morto = Boolean(personagem.morto_em);
   const travado = useCallback(
-    (trava: keyof Travas) => !souMestre && personagem.travas?.[trava] !== false,
-    [souMestre, personagem.travas],
+    (trava: keyof Travas) => morto || (!souMestre && personagem.travas?.[trava] !== false),
+    [morto, souMestre, personagem.travas],
   );
 
   return (
@@ -143,7 +146,8 @@ export function FichaProvider({
       value={{
         personagem,
         souMestre,
-        editando,
+        morto,
+        editando: editando && !morto,
         setEditando,
         status,
         travado,

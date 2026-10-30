@@ -29,7 +29,8 @@ export async function obterSessao(): Promise<Sessao | null> {
   const [{ data: perfil }, { data: membros }, { data: personagem }, cookieStore] = await Promise.all([
     supabase.from("profiles").select("nome").eq("id", userId).maybeSingle(),
     supabase.from("membros").select("papel, campanhas(id, nome, codigo_convite)").eq("user_id", userId),
-    supabase.from("personagens").select("id").eq("dono_id", userId).limit(1).maybeSingle(),
+    // só o personagem vivo; quem morreu fica no memorial
+    supabase.from("personagens").select("id").eq("dono_id", userId).is("morto_em", null).limit(1).maybeSingle(),
     cookies(),
   ]);
 

@@ -54,7 +54,7 @@ function LosangoPE() {
 }
 
 export function Atributos({ inicial }: { inicial: Atributo[] }) {
-  const { personagem, editando, travado, setStatus } = useFicha();
+  const { personagem, editando, travado, setStatus, morto } = useFicha();
   const { rolar, rolando, reforcar } = useRolador();
   const supabase = useMemo(() => createClient(), []);
   const [atributos, setAtributos] = useState(inicial);
@@ -105,7 +105,7 @@ export function Atributos({ inicial }: { inicial: Atributo[] }) {
         <div>
           <h2 className="text-2xl tracking-wide">Jogue um D100</h2>
           <p className="text-lg text-muted-foreground">Para realizar uma ação tire menos que:</p>
-          {!editando && (
+          {!editando && !morto && (
             <p className="text-base text-muted-foreground/70">
               {reforcar ? "Reforço armado: a próxima rolagem usa 2 dados." : "Toque num atributo para rolar."}
             </p>
@@ -142,7 +142,7 @@ export function Atributos({ inicial }: { inicial: Atributo[] }) {
                     ) : (
                       <button
                         type="button"
-                        disabled={rolando || editando}
+                        disabled={rolando || editando || morto}
                         onClick={() => rolar(a.id)}
                         aria-label={`Rolar ${a.nome} (${a.valor})`}
                         className="-mx-2 flex min-h-11 w-full items-center gap-3 rounded-lg px-2 text-left transition-colors hover:bg-secondary active:bg-accent disabled:hover:bg-transparent"

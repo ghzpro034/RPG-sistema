@@ -29,7 +29,7 @@ function Dente({ className }: { className?: string }) {
 }
 
 export function Inventario({ inicial }: { inicial: ItemInventario[] }) {
-  const { personagem, editando, setStatus, salvarDepois } = useFicha();
+  const { personagem, editando, setStatus, salvarDepois, morto } = useFicha();
   const dentes = personagem.dentes ?? 0;
   const supabase = useMemo(() => createClient(), []);
   const [itens, setItens] = useState(inicial);
@@ -140,7 +140,12 @@ export function Inventario({ inicial }: { inicial: ItemInventario[] }) {
               </div>
             )}
             <div className="flex items-center justify-between gap-2">
-              <Contador rotulo={`quantidade de ${item.nome}`} valor={quantidade} aoMudar={(q) => mudarQuantidade(id, q)} />
+              <Contador
+                rotulo={`quantidade de ${item.nome}`}
+                valor={quantidade}
+                desabilitado={morto}
+                aoMudar={(q) => mudarQuantidade(id, q)}
+              />
               {editando &&
                 (confirmando === id ? (
                   <Button variant="destructive" size="lg" onClick={() => remover(id)} onBlur={() => setConfirmando(null)}>

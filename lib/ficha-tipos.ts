@@ -21,6 +21,9 @@ export type Personagem = {
   conhecimentos: string[];
   enganou_morte: boolean;
   travas: Travas;
+  /** preenchido quando o mestre registra a morte: a ficha vai para o memorial, só leitura */
+  morto_em: string | null;
+  epitafio: string | null;
 };
 
 export type Grupo = "forca" | "mental" | "social";

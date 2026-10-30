@@ -1,6 +1,9 @@
 "use client";
 
 import { LogOut, Minus, Plus, RotateCcw, Shield, Skull, TrendingDown } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { Memorial } from "@/components/mesa/Memorial";
 import { cn } from "cn";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -26,10 +29,12 @@ function Card({
   p,
   aoMudarVida,
   aoTirar,
+  aoMorrer,
 }: {
   p: CardPersonagem;
   aoMudarVida: (vida: number) => void;
   aoTirar: () => void;
+  aoMorrer: () => void;
 }) {
   const [confirmando, setConfirmando] = useState(false);
   const estado = estadoDe(p.vida);
@@ -85,31 +90,36 @@ function Card({
       </dl>
 
       <div className="flex items-center justify-between gap-2">
-        <span className="flex items-center gap-1 text-base text-muted-foreground">
+        <span className="text-base text-muted-foreground">
           {p.itens} {p.itens === 1 ? "item" : "itens"}
-          {/* tira só desta mesa; a ficha continua nas outras */}
-          {confirmando ? (
-            <Button
-              variant="destructive"
-              size="sm"
-              className="ml-2"
-              onClick={() => {
-                setConfirmando(false);
-                aoTirar();
-              }}
-              onBlur={() => setConfirmando(false)}
-            >
-              Tirar mesmo
-            </Button>
-          ) : (
-            <Button variant="ghost" size="sm" className="ml-2" onClick={() => setConfirmando(true)}>
-              <LogOut /> Tirar da mesa
-            </Button>
-          )}
         </span>
         <Link href={`/ficha/${p.id}`} className={buttonVariants({ variant: "outline", size: "lg" })}>
           Abrir e editar ficha
         </Link>
+      </div>
+
+      <div className="flex flex-wrap items-center justify-end gap-1 border-t border-border/60 pt-2">
+        {/* tira só desta mesa; a ficha continua nas outras */}
+        {confirmando ? (
+          <Button
+            variant="destructive"
+            size="sm"
+            onClick={() => {
+              setConfirmando(false);
+              aoTirar();
+            }}
+            onBlur={() => setConfirmando(false)}
+          >
+            Tirar mesmo
+          </Button>
+        ) : (
+          <Button variant="ghost" size="sm" onClick={() => setConfirmando(true)}>
+            <LogOut /> Tirar da mesa
+          </Button>
+        )}
+        <Button variant="ghost" size="sm" className="text-instavel" onClick={aoMorrer}>
+          <Skull /> Morreu
+        </Button>
       </div>
     </li>
   );
@@ -180,8 +190,8 @@ export function MesaAoVivo({ campanhaId, inicial }: { campanhaId: string; inicia
         (payload) => {
           const novo = payload.new as Personagem;
           const antigo = confirmados.current.find((p) => p.id === novo?.id);
-          // retrato trocado: o servidor recarrega (URL nova da foto)
-          if (!antigo || antigo.retrato_path !== novo.retrato_path) {
+          // retrato trocado ou morte registrada: o servidor recarrega (foto nova, memorial)
+          if (!antigo || antigo.retrato_path !== novo.retrato_path || novo.morto_em) {
             router.refresh();
             return;
           }
@@ -222,6 +232,20 @@ export function MesaAoVivo({ campanhaId, inicial }: { campanhaId: string; inicia
     };
   }, [supabase, campanhaId, ids, router]);
 
+  const [morrendo, setMorrendo] = useState<CardPersonagem | null>(null);
+  const [registrando, setRegistrando] = useState(false);
+
+  async function registrarMorte(epitafio: string) {
+    if (!morrendo) return;
+    setRegistrando(true);
+    const { error } = await supabase.rpc("matar_personagem", { p_personagem: morrendo.id, p_epitafio: epitafio });
+    setRegistrando(false);
+    if (error) return toast.error(error.message);
+    toast.success(`${morrendo.nome} foi para o memorial`);
+    setMorrendo(null);
+    router.refresh();
+  }
+
   async function tirarDaMesa(p: CardPersonagem) {
     const { error } = await supabase.rpc("remover_da_mesa", { p_personagem: p.id, p_campanha: campanhaId });
     if (error) return toast.error(error.message);
@@ -245,7 +269,8 @@ export function MesaAoVivo({ campanhaId, inicial }: { campanhaId: string; inicia
     );
   }
 
-  const nomes = new Map(personagens.map((p) => [p.id, p.nome]));
+  // o histórico também cita quem já está no memorial
+  const nomes = new Map([...inicial.memorial, ...personagens].map((p) => [p.id, p.nome]));
   const pior = personagens.length ? personagens.reduce((a, b) => (b.vida < a.vida ? b : a)) : null;
   const corrompido = personagens.length ? personagens.reduce((a, b) => (b.corrupcao > a.corrupcao ? b : a)) : null;
 
@@ -275,7 +300,13 @@ export function MesaAoVivo({ campanhaId, inicial }: { campanhaId: string; inicia
         {personagens.length ? (
           <ul className="grid gap-4 xl:grid-cols-2">
             {personagens.map((p) => (
-              <Card key={p.id} p={p} aoMudarVida={(vida) => mudarVida(p.id, vida)} aoTirar={() => tirarDaMesa(p)} />
+              <Card
+                key={p.id}
+                p={p}
+                aoMudarVida={(vida) => mudarVida(p.id, vida)}
+                aoTirar={() => tirarDaMesa(p)}
+                aoMorrer={() => setMorrendo(p)}
+              />
             ))}
           </ul>
         ) : (
@@ -283,6 +314,7 @@ export function MesaAoVivo({ campanhaId, inicial }: { campanhaId: string; inicia
             <Shield className="size-5" /> Nenhuma ficha ainda. Passe o código de convite para os jogadores.
           </p>
         )}
+        <Memorial falecidos={inicial.memorial} />
       </div>
       <aside className="flex flex-col gap-8">
         <TrazerPersonagem campanhaId={campanhaId} disponiveis={inicial.disponiveis} />
@@ -290,6 +322,36 @@ export function MesaAoVivo({ campanhaId, inicial }: { campanhaId: string; inicia
         <FeedRolagens rolagens={rolagens} nomes={nomes} />
         <HistoricoAlteracoes alteracoes={alteracoes} nomes={nomes} autores={inicial.autores} />
       </aside>
+
+      <Dialog open={morrendo !== null} onOpenChange={(aberto) => !aberto && setMorrendo(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-xl">
+              <Skull className="size-5" /> {morrendo?.nome} morreu?
+            </DialogTitle>
+            <DialogDescription className="text-base">
+              A ficha vai para o memorial (só leitura) e {morrendo?.jogador} sai das mesas onde o personagem estava.
+              Para voltar, entra com um código e cria outro personagem. Você pode trazer a ficha de volta depois.
+            </DialogDescription>
+          </DialogHeader>
+          <form
+            className="flex flex-col gap-3"
+            onSubmit={(e) => {
+              e.preventDefault();
+              void registrarMorte(String(new FormData(e.currentTarget).get("epitafio") ?? ""));
+            }}
+          >
+            <Textarea
+              name="epitafio"
+              placeholder="Epitáfio (opcional): como foi o fim?"
+              className="min-h-20 text-lg md:text-lg"
+            />
+            <Button type="submit" variant="destructive" size="lg" disabled={registrando} className="font-heading tracking-wider">
+              {registrando ? "Registrando…" : "Registrar a morte"}
+            </Button>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

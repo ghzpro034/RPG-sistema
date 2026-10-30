@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Loader2, Pencil } from "lucide-react";
+import { Check, Loader2, Pencil, Skull } from "lucide-react";
 import { Atributos } from "@/components/ficha/Atributos";
 import { Baralho } from "@/components/ficha/Baralho";
 import { Cabecalho } from "@/components/ficha/Cabecalho";
@@ -25,7 +25,19 @@ const TEXTO_STATUS: Record<StatusSalvamento, string> = {
 };
 
 function BarraEdicao() {
-  const { editando, setEditando, status } = useFicha();
+  const { personagem, editando, setEditando, status, morto } = useFicha();
+  if (morto) {
+    return (
+      <div className="flex flex-col items-center gap-1 rounded-xl border border-white/15 bg-card px-4 py-4 text-center">
+        <Skull className="size-7 text-muted-foreground" aria-hidden />
+        <p className="font-heading text-lg tracking-[0.2em] uppercase">No memorial</p>
+        <p className="text-base text-muted-foreground" suppressHydrationWarning>
+          Morreu em {new Date(personagem.morto_em!).toLocaleDateString("pt-BR")}. A ficha é só leitura.
+        </p>
+        {personagem.epitafio && <p className="mt-1 max-w-prose text-lg italic">“{personagem.epitafio}”</p>}
+      </div>
+    );
+  }
   return (
     <div className="sticky top-0 z-10 -mx-4 flex items-center justify-end gap-3 border-b border-border/60 bg-background/90 px-4 py-2 backdrop-blur">
       <span className="flex items-center gap-1.5 text-base text-muted-foreground" aria-live="polite">
@@ -50,7 +62,9 @@ const TIPOS_BARALHO = ["arquetipo", "trauma"] as const;
 const TIPOS_HABILIDADE = ["habilidade", "revolta"] as const;
 
 function Conteudo({ dados }: { dados: DadosFicha }) {
-  const { personagem, souMestre } = useFicha();
+  const { personagem, souMestre: mestre, morto } = useFicha();
+  // no memorial o mestre só lê: some o dar carta, memórias e graças
+  const souMestre = mestre && !morto;
   const ao = useConteudoAoVivo(personagem.id, dados);
   // remonta o inventário quando o banco muda (item entregue pelo mestre, por exemplo)
   const chaveInventario = ao.inventario.map((i) => `${i.id}:${i.quantidade}:${i.memorias_desbloqueadas}`).join("|");
@@ -120,7 +134,7 @@ export function Ficha({ dados }: { dados: DadosFicha }) {
         {/* pb-28: espaço para o painel do resultado, que fica preso embaixo */}
         <div className="flex flex-col gap-8 pb-28">
           <BarraEdicao />
-          {dados.souMestre && <Travas />}
+          {dados.souMestre && !dados.personagem.morto_em && <Travas />}
           <Conteudo dados={dados} />
         </div>
         <PainelResultado />
