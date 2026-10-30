@@ -15,9 +15,20 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
         run: |
+          # tira espaços e quebras de linha que às vezes vêm junto ao colar o secret
+          url=$(printf '%s' "$SUPABASE_URL" | tr -d '[:space:]' | sed 's:/*$::')
+          chave=$(printf '%s' "$SUPABASE_PUBLISHABLE_KEY" | tr -d '[:space:]')
+          if [ -z "$url" ] || [ -z "$chave" ]; then
+            echo "::error::Faltam os secrets SUPABASE_URL e/ou SUPABASE_PUBLISHABLE_KEY em Settings → Secrets and variables → Actions → aba Secrets (Repository secrets)."
+            exit 1
+          fi
+          case "$url" in
+            https://*) ;;
+            *) echo "::error::SUPABASE_URL precisa começar com https:// (ex.: https://xxxx.supabase.co)"; exit 1 ;;
+          esac
           codigo=$(curl -sS -o /dev/null -w "%{http_code}" \
-            "$SUPABASE_URL/rest/v1/campanhas?select=id&limit=1" \
-            -H "apikey: $SUPABASE_PUBLISHABLE_KEY")
+            "$url/rest/v1/campanhas?select=id&limit=1" \
+            -H "apikey: $chave")
           echo "Supabase respondeu $codigo"
           # 5xx ou sem resposta: o projeto pode estar pausado
           test "$codigo" -lt 500
