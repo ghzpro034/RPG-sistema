@@ -21,7 +21,7 @@ export default function CadastroPage() {
       </Formulario>
       <p className="mt-6 text-center text-base text-muted-foreground">
         Já tem conta?{" "}
-        <Link href="/entrar" className="text-ouro underline-offset-4 hover:underline">
+        <Link href="/entrar" className="inline-block py-2 text-ouro underline-offset-4 hover:underline">
           Entrar
         </Link>
       </p>

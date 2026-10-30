@@ -119,7 +119,7 @@ export function Atributos({ inicial }: { inicial: Atributo[] }) {
         {GRUPOS.map(({ grupo, titulo, texto, circulo }) => (
           <div key={grupo}>
             <h3 className={cn("mb-2 text-base tracking-[0.2em] uppercase", texto)}>{titulo}</h3>
-            <ul className="flex flex-col gap-1">
+            <ul className="grid grid-cols-2 gap-x-2 gap-y-1 sm:grid-cols-1">
               {atributos
                 .filter((a) => a.grupo === grupo)
                 .map((a) => (
@@ -145,17 +145,19 @@ export function Atributos({ inicial }: { inicial: Atributo[] }) {
                         disabled={rolando || editando || morto}
                         onClick={() => rolar(a.id)}
                         aria-label={`Rolar ${a.nome} (${a.valor})`}
-                        className="-mx-2 flex min-h-11 w-full items-center gap-3 rounded-lg px-2 text-left transition-colors hover:bg-secondary active:bg-accent disabled:hover:bg-transparent"
+                        className="flex min-h-11 w-full min-w-0 items-center gap-2 rounded-lg px-1 text-left transition-colors hover:bg-secondary active:bg-accent disabled:hover:bg-transparent sm:-mx-2 sm:gap-3 sm:px-2"
                       >
                         <span
                           className={cn(
-                            "flex size-9 shrink-0 items-center justify-center rounded-full font-heading text-sm font-bold text-white tabular-nums",
+                            "flex size-8 shrink-0 items-center justify-center rounded-full font-heading text-sm font-bold text-white tabular-nums sm:size-9",
                             circulo,
                           )}
                         >
                           {a.valor}
                         </span>
-                        <span className="font-heading text-base tracking-wide uppercase">{a.nome}</span>
+                        <span className="truncate font-heading text-[0.8rem] uppercase sm:text-base sm:tracking-wide">
+                          {a.nome}
+                        </span>
                       </button>
                     )}
                   </li>

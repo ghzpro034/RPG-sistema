@@ -22,7 +22,7 @@ export function Formulario({ acao, botao, children }: Props) {
           {estado.erro}
         </p>
       )}
-      <Button type="submit" size="lg" disabled={enviando} className="font-heading tracking-wider">
+      <Button type="submit" size="lg" disabled={enviando} className="h-11 font-heading text-base tracking-wider">
         {enviando ? "Aguarde…" : botao}
       </Button>
     </form>

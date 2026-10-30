@@ -47,7 +47,7 @@ function BarraEdicao() {
       <Button
         variant={editando ? "default" : "outline"}
         size="lg"
-        className="font-heading tracking-wider"
+        className="h-11 font-heading tracking-wider"
         onClick={() => setEditando(!editando)}
       >
         {editando ? <Check /> : <Pencil />}
@@ -76,12 +76,13 @@ function Conteudo({ dados }: { dados: DadosFicha }) {
       <Atributos inicial={dados.atributos} />
 
       <Tabs defaultValue="baralho" className="gap-4">
-        <TabsList className="h-11! w-full justify-start overflow-x-auto [scrollbar-width:none]">
-          <TabsTrigger value="baralho" className="flex-none px-3 text-base">Baralho</TabsTrigger>
-          <TabsTrigger value="inventario" className="flex-none px-3 text-base">Inventário</TabsTrigger>
-          <TabsTrigger value="habilidade" className="flex-none px-3 text-base">Habilidade e Revolta</TabsTrigger>
-          <TabsTrigger value="conhecimento" className="flex-none px-3 text-base">Conhecimento</TabsTrigger>
-          <TabsTrigger value="memorias" className="flex-none px-3 text-base">Memórias e Graças</TabsTrigger>
+        {/* no celular as abas quebram em linhas: todas ficam à vista, sem rolar para o lado */}
+        <TabsList className="h-auto! w-full flex-wrap gap-1">
+          <TabsTrigger value="baralho" className="h-10 basis-[30%] px-3 text-base">Baralho</TabsTrigger>
+          <TabsTrigger value="inventario" className="h-10 basis-[30%] px-3 text-base">Inventário</TabsTrigger>
+          <TabsTrigger value="conhecimento" className="h-10 basis-[30%] px-3 text-base">Conhecimento</TabsTrigger>
+          <TabsTrigger value="habilidade" className="h-10 basis-[45%] px-3 text-base">Habilidade e Revolta</TabsTrigger>
+          <TabsTrigger value="memorias" className="h-10 basis-[45%] px-3 text-base">Memórias e Graças</TabsTrigger>
         </TabsList>
         <TabsContent value="baralho">
           <Baralho

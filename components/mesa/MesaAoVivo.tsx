@@ -317,10 +317,11 @@ export function MesaAoVivo({ campanhaId, inicial }: { campanhaId: string; inicia
         <Memorial falecidos={inicial.memorial} />
       </div>
       <aside className="flex flex-col gap-8">
-        <TrazerPersonagem campanhaId={campanhaId} disponiveis={inicial.disponiveis} />
-        <EntregarItem personagens={personagens} itens={inicial.itens} />
+        {/* o que mais se olha durante a sessão vem primeiro */}
         <FeedRolagens rolagens={rolagens} nomes={nomes} />
+        <EntregarItem personagens={personagens} itens={inicial.itens} />
         <HistoricoAlteracoes alteracoes={alteracoes} nomes={nomes} autores={inicial.autores} />
+        <TrazerPersonagem campanhaId={campanhaId} disponiveis={inicial.disponiveis} />
       </aside>
 
       <Dialog open={morrendo !== null} onOpenChange={(aberto) => !aberto && setMorrendo(null)}>

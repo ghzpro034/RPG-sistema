@@ -93,7 +93,7 @@ export function Inventario({ inicial }: { inicial: ItemInventario[] }) {
           <span className="flex size-10 items-center justify-center rounded-full border-2 border-white/70 bg-black">
             <Dente className="size-6" />
           </span>
-          <span className="sr-only">dentes</span>
+          <span className="pr-3 font-heading text-xs tracking-[0.2em] text-muted-foreground uppercase">Dentes</span>
         </div>
       </div>
       <ul className="grid gap-3 sm:grid-cols-2">

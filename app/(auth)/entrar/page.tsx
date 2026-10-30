@@ -13,7 +13,7 @@ export default function EntrarPage() {
       </Formulario>
       <p className="mt-6 text-center text-base text-muted-foreground">
         Primeira vez na mesa?{" "}
-        <Link href="/cadastro" className="text-ouro underline-offset-4 hover:underline">
+        <Link href="/cadastro" className="inline-block py-2 text-ouro underline-offset-4 hover:underline">
           Criar conta
         </Link>
       </p>

@@ -133,7 +133,7 @@ export function AcoesPE() {
         disabled={personagem.pe < CUSTO_REFORCAR && !reforcar}
         onClick={() => setReforcar(!reforcar)}
         className={cn(
-          "rounded-md border px-2.5 py-1 text-left text-base transition-colors disabled:opacity-40",
+          "min-h-11 rounded-md border px-3 text-left text-base transition-colors disabled:opacity-40",
           reforcar ? "border-ouro bg-ouro/15 text-ouro" : "border-border text-muted-foreground hover:text-foreground",
         )}
       >
@@ -143,7 +143,7 @@ export function AcoesPE() {
         type="button"
         disabled={!ultima || rolando || personagem.pe < CUSTO_REFAZER}
         onClick={refazer}
-        className="rounded-md border border-border px-2.5 py-1 text-left text-base text-muted-foreground transition-colors hover:text-foreground disabled:opacity-40"
+        className="min-h-11 rounded-md border border-border px-3 text-left text-base text-muted-foreground transition-colors hover:text-foreground disabled:opacity-40"
       >
         Refazer −{CUSTO_REFAZER}
       </button>

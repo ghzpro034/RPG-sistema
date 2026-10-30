@@ -44,29 +44,34 @@ export function Cabecalho({ retratoInicial, cartas }: { retratoInicial: string |
     }
   }
 
+  // No celular: retrato pequeno ao lado do nome, para a vida e o dado aparecerem logo.
+  // Do tablet para cima: retrato grande à esquerda, como no Canva.
   return (
-    <section className="flex flex-col items-center gap-6 sm:flex-row sm:items-start">
-      <div className="relative shrink-0">
-        <div className="h-56 w-44 overflow-hidden rounded-[50%] border-2 border-white/15 bg-secondary shadow-xl shadow-black">
+    <section className="grid grid-cols-[7rem_minmax(0,1fr)] items-center gap-x-5 gap-y-4 sm:grid-cols-[11rem_minmax(0,1fr)] sm:items-start sm:gap-x-8">
+      <div className="relative sm:row-span-2">
+        <div className="h-36 w-28 overflow-hidden rounded-[50%] border-2 border-white/15 bg-secondary shadow-xl shadow-black sm:h-56 sm:w-44">
           {retratoUrl ? (
             // eslint-disable-next-line @next/next/no-img-element -- URL assinada do Supabase, já comprimida
             <img src={retratoUrl} alt={`Retrato de ${p.nome}`} className="size-full object-cover" />
           ) : (
-            <span className="flex size-full items-center justify-center font-heading text-6xl text-white/20">
+            <span className="flex size-full items-center justify-center font-heading text-5xl text-white/20 sm:text-6xl">
               {p.nome.charAt(0)}
             </span>
           )}
         </div>
 
         {/* medalhão do nível */}
-        <div className="absolute -top-1 -right-3 flex size-14 items-center justify-center rounded-full border-4 border-double border-white/60 bg-secondary font-heading text-2xl font-bold">
+        <div
+          className="absolute -top-1 -right-3 flex size-11 items-center justify-center rounded-full border-4 border-double border-white/60 bg-secondary font-heading text-xl font-bold sm:size-14 sm:text-2xl"
+          aria-label={`Nível ${p.nivel ?? ""}`}
+        >
           {editando ? (
             <TextoEditavel
               valor={p.nivel ?? ""}
               aoSalvar={(nivel) => salvar({ nivel })}
               editavel
               rotulo="Nível"
-              campoClassName="h-9 w-11 border-0 bg-transparent px-0 text-center font-heading text-xl font-bold"
+              campoClassName="h-9 w-10 border-0 bg-transparent px-0 text-center font-heading text-lg font-bold"
             />
           ) : (
             p.nivel
@@ -74,9 +79,12 @@ export function Cabecalho({ retratoInicial, cartas }: { retratoInicial: string |
         </div>
 
         {/* escudo da defesa */}
-        <div className="absolute -right-3 bottom-2 flex size-14 items-center justify-center" aria-label={`Defesa ${p.defesa}`}>
-          <Shield className="absolute size-14 fill-secondary text-white/60" aria-hidden />
-          <span className="relative font-heading text-xl font-bold">{p.defesa}</span>
+        <div
+          className="absolute -right-3 bottom-1 flex size-11 items-center justify-center sm:bottom-2 sm:size-14"
+          aria-label={`Defesa ${p.defesa}`}
+        >
+          <Shield className="absolute size-11 fill-secondary text-white/60 sm:size-14" aria-hidden />
+          <span className="relative font-heading text-lg font-bold sm:text-xl">{p.defesa}</span>
         </div>
 
         {/* só o mestre troca imagens */}
@@ -86,7 +94,7 @@ export function Cabecalho({ retratoInicial, cartas }: { retratoInicial: string |
               type="button"
               onClick={() => arquivo.current?.click()}
               disabled={enviando}
-              className="absolute inset-x-6 bottom-6 flex items-center justify-center gap-1.5 rounded-md bg-background/85 py-2 text-base backdrop-blur hover:bg-background"
+              className="absolute inset-x-1 bottom-3 flex min-h-11 items-center justify-center gap-1.5 rounded-md bg-background/85 text-base backdrop-blur hover:bg-background sm:inset-x-6 sm:bottom-6"
             >
               {enviando ? <Loader2 className="size-4 animate-spin" /> : <Camera className="size-4" />}
               {enviando ? "Enviando…" : "Trocar foto"}
@@ -106,7 +114,7 @@ export function Cabecalho({ retratoInicial, cartas }: { retratoInicial: string |
         )}
       </div>
 
-      <div className="flex w-full min-w-0 flex-1 flex-col gap-4 text-center">
+      <div className="flex min-w-0 flex-col gap-2">
         <div>
           <p className="text-base text-ouro/80 italic">{p.nome}</p>
           {editando ? (
@@ -115,24 +123,14 @@ export function Cabecalho({ retratoInicial, cartas }: { retratoInicial: string |
               aoSalvar={(nome) => nome && salvar({ nome })}
               editavel
               rotulo="Nome do personagem"
-              campoClassName="mt-1 h-12 text-center font-heading text-2xl md:text-2xl"
+              campoClassName="mt-1 h-12 font-heading text-xl md:text-2xl"
             />
           ) : (
-            <h1 className="text-3xl font-bold tracking-wide break-words uppercase sm:text-4xl">{p.nome}</h1>
+            <h1 className="text-2xl leading-tight font-bold tracking-wide break-words uppercase sm:text-4xl">{p.nome}</h1>
           )}
         </div>
 
-        <TextoEditavel
-          valor={p.descricao ?? ""}
-          aoSalvar={(descricao) => salvar({ descricao })}
-          editavel={editando}
-          rotulo="Descrição"
-          multilinha
-          placeholder="Sem descrição ainda."
-          className="text-left text-lg leading-snug sm:text-justify"
-        />
-
-        <div className="flex flex-col items-center gap-0.5 font-heading text-base font-bold tracking-wide uppercase">
+        <div className="flex flex-col gap-0.5 font-heading text-sm font-bold tracking-wide uppercase sm:text-base">
           {editando ? (
             <TextoEditavel
               valor={p.caminho ?? ""}
@@ -140,7 +138,6 @@ export function Cabecalho({ retratoInicial, cartas }: { retratoInicial: string |
               editavel
               rotulo="Caminho"
               placeholder="Caminho da…"
-              campoClassName="text-center"
             />
           ) : (
             p.caminho && <span className="text-caminho italic">{p.caminho}</span>
@@ -153,6 +150,17 @@ export function Cabecalho({ retratoInicial, cartas }: { retratoInicial: string |
           ))}
         </div>
       </div>
+
+      <TextoEditavel
+        valor={p.descricao ?? ""}
+        aoSalvar={(descricao) => salvar({ descricao })}
+        editavel={editando}
+        rotulo="Descrição"
+        multilinha
+        placeholder="Sem descrição ainda."
+        className="col-span-2 text-lg leading-snug sm:col-span-1 sm:col-start-2 sm:text-justify"
+        campoClassName="col-span-2 sm:col-span-1 sm:col-start-2"
+      />
     </section>
   );
 }

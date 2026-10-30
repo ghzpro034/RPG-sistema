@@ -71,11 +71,13 @@ export function Vitais() {
               ) : (
                 <span
                   className={cn(
-                    "flex size-10 items-center justify-center rounded-full border-2 font-heading text-lg tabular-nums",
+                    "flex h-10 items-center gap-1 rounded-full border-2 px-3 font-heading text-lg tabular-nums",
                     congelou ? "border-congelado bg-congelado/30 text-white" : "border-white/30 bg-secondary",
                   )}
                   aria-label={`Congelamento ${congelado}`}
+                  title="Congelamento"
                 >
+                  <Snowflake className="size-4 text-congelado" aria-hidden />
                   {congelado}
                 </span>
               )}
