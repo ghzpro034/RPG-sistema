@@ -17,7 +17,7 @@ import { EntregarItem } from "@/components/mesa/EntregarItem";
 import { HistoricoAlteracoes } from "@/components/mesa/HistoricoAlteracoes";
 import { TrazerPersonagem } from "@/components/mesa/TrazerPersonagem";
 import type { Alteracao, CardPersonagem, DadosMesa } from "@/lib/mesa";
-import { createClient } from "@/lib/supabase/client";
+import { createClient, nomeCanal } from "@/lib/supabase/client";
 
 function mesclarRolagem(lista: Rolagem[], rolagem: Rolagem) {
   return [rolagem, ...lista.filter((r) => r.id !== rolagem.id)]
@@ -177,7 +177,7 @@ export function MesaAoVivo({ campanhaId, inicial }: { campanhaId: string; inicia
   useEffect(() => {
     const pendentes = timers.current;
     const canal = supabase
-      .channel(`mesa-${campanhaId}`)
+      .channel(nomeCanal(`mesa-${campanhaId}`))
       // alguém entrou ou saiu da mesa: o servidor recarrega a lista
       .on(
         "postgres_changes",

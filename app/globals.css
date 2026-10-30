@@ -63,7 +63,7 @@
 }
 
 :root {
-  /* Grimório: preto puro e acentos coloridos, como a ficha do Canva. Tema único (escuro). */
+  /* A Silent Machine: preto puro e acentos coloridos, como a ficha do Canva. Tema único (escuro). */
   --background: oklch(0.06 0 0);
   --foreground: oklch(0.96 0 0);
   --card: oklch(0.15 0 0);

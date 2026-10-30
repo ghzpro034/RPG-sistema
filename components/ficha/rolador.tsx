@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { useFicha } from "@/components/ficha/contexto";
 import { Button } from "@/components/ui/button";
 import { CUSTO_REFAZER, CUSTO_REFORCAR, type Rolagem } from "@/lib/ficha-tipos";
-import { createClient } from "@/lib/supabase/client";
+import { createClient, nomeCanal } from "@/lib/supabase/client";
 
 type Contexto = {
   reforcar: boolean;
@@ -56,7 +56,7 @@ export function RoladorProvider({ campanhaAtual, children }: { campanhaAtual: st
 
     // rolagens feitas pelo mestre para este personagem também aparecem
     const canal = supabase
-      .channel(`rolagens-${personagem.id}`)
+      .channel(nomeCanal(`rolagens-${personagem.id}`))
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "rolagens", filter: `personagem_id=eq.${personagem.id}` },

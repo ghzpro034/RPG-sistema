@@ -12,8 +12,9 @@ export default function MesaLayout({ children }: { children: React.ReactNode }) 
   return (
     <>
       <header className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-4 py-2 sm:py-3">
-        <Link href="/" className="shrink-0 font-heading text-sm tracking-[0.3em] text-ouro">
-          GRIMÓRIO
+        <Link href="/" className="shrink-0 font-heading text-xs leading-tight tracking-[0.2em] text-ouro uppercase sm:text-sm sm:tracking-[0.3em]">
+          A Silent <br className="sm:hidden" />
+          Machine
         </Link>
         <Suspense>
           <Usuario />

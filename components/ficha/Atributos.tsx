@@ -8,7 +8,7 @@ import { useFicha } from "@/components/ficha/contexto";
 import { AcoesPE, UltimasRolagens, useRolador } from "@/components/ficha/rolador";
 import { Input } from "@/components/ui/input";
 import type { Atributo, Grupo } from "@/lib/ficha-tipos";
-import { createClient } from "@/lib/supabase/client";
+import { createClient, nomeCanal } from "@/lib/supabase/client";
 
 const GRUPOS: { grupo: Grupo; titulo: string; texto: string; circulo: string }[] = [
   { grupo: "forca", titulo: "Força", texto: "text-forca", circulo: "bg-forca" },
@@ -64,7 +64,7 @@ export function Atributos({ inicial }: { inicial: Atributo[] }) {
   // ao vivo: o mestre ajusta um atributo e ele muda aqui
   useEffect(() => {
     const canal = supabase
-      .channel(`atributos-${personagem.id}`)
+      .channel(nomeCanal(`atributos-${personagem.id}`))
       .on(
         "postgres_changes",
         { event: "UPDATE", schema: "public", table: "atributos", filter: `personagem_id=eq.${personagem.id}` },

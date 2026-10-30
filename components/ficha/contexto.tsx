@@ -2,7 +2,7 @@
 
 import { createContext, use, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { createClient } from "@/lib/supabase/client";
+import { createClient, nomeCanal } from "@/lib/supabase/client";
 import type { Personagem, Travas } from "@/lib/ficha-tipos";
 
 export type StatusSalvamento = "ocioso" | "salvando" | "salvo" | "erro";
@@ -123,7 +123,7 @@ export function FichaProvider({
   // ao vivo: o mestre mexe na ficha e o player vê na hora
   useEffect(() => {
     const canal = supabase
-      .channel(`ficha-${inicial.id}`)
+      .channel(nomeCanal(`ficha-${inicial.id}`))
       .on(
         "postgres_changes",
         { event: "UPDATE", schema: "public", table: "personagens", filter: `id=eq.${inicial.id}` },

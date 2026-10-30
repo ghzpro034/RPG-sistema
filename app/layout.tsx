@@ -17,8 +17,8 @@ const cormorant = Cormorant_Garamond({
 });
 
 export const metadata: Metadata = {
-  title: "Grimório",
-  description: "Fichas da mesa de RPG",
+  title: "A Silent Machine",
+  description: "Fichas da mesa de A Silent Machine",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

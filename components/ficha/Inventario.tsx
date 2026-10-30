@@ -29,7 +29,7 @@ function Dente({ className }: { className?: string }) {
 }
 
 export function Inventario({ inicial }: { inicial: ItemInventario[] }) {
-  const { personagem, editando, setStatus, salvarDepois, morto } = useFicha();
+  const { personagem, editando, setStatus, salvarDepois, morto, souMestre } = useFicha();
   const dentes = personagem.dentes ?? 0;
   const supabase = useMemo(() => createClient(), []);
   const [itens, setItens] = useState(inicial);
@@ -146,13 +146,14 @@ export function Inventario({ inicial }: { inicial: ItemInventario[] }) {
                 desabilitado={morto}
                 aoMudar={(q) => mudarQuantidade(id, q)}
               />
-              {editando &&
+              {/* o mestre remove direto; o player só no modo edição */}
+              {(editando || (souMestre && !morto)) &&
                 (confirmando === id ? (
-                  <Button variant="destructive" size="lg" onClick={() => remover(id)} onBlur={() => setConfirmando(null)}>
-                    Confirmar
+                  <Button variant="destructive" size="lg" className="h-11" onClick={() => remover(id)} onBlur={() => setConfirmando(null)}>
+                    Remover mesmo
                   </Button>
                 ) : (
-                  <Button variant="ghost" size="lg" onClick={() => setConfirmando(id)} aria-label={`Remover ${item.nome}`}>
+                  <Button variant="ghost" size="lg" className="h-11" onClick={() => setConfirmando(id)} aria-label={`Remover ${item.nome}`}>
                     <Trash2 /> Remover
                   </Button>
                 ))}

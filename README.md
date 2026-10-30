@@ -1,6 +1,6 @@
-# Grimório
+# A Silent Machine
 
-Sistema de fichas para a mesa de RPG: cada jogador edita a própria ficha, e o mestre acompanha a mesa inteira ao vivo.
+Sistema de fichas da mesa de RPG A Silent Machine: cada jogador edita a própria ficha, e o mestre acompanha a mesa inteira ao vivo.
 
 Stack: Next.js 16 (App Router) + TypeScript, Tailwind CSS 4 + shadcn/ui, Supabase (Postgres, RLS, Auth, Storage, Realtime) e Vercel.
 

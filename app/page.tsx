@@ -9,7 +9,7 @@ async function Redirecionar() {
 
 export default function Home() {
   return (
-    <Suspense fallback={<p className="m-auto text-xl text-muted-foreground">Abrindo o grimório…</p>}>
+    <Suspense fallback={<p className="m-auto text-xl text-muted-foreground">Carregando…</p>}>
       <Redirecionar />
     </Suspense>
   );

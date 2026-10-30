@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { carregarCartas, carregarGracas, carregarInventario } from "@/lib/conteudo";
 import type { Carta, Graca, ItemInventario } from "@/lib/ficha-tipos";
-import { createClient } from "@/lib/supabase/client";
+import { createClient, nomeCanal } from "@/lib/supabase/client";
 
 type Conteudo = { cartas: Carta[]; inventario: ItemInventario[]; gracas: Graca[] };
 
@@ -31,7 +31,7 @@ export function useConteudoAoVivo(personagemId: string, inicial: Conteudo) {
   useEffect(() => {
     const filtro = `personagem_id=eq.${personagemId}`;
     const canal = supabase
-      .channel(`conteudo-${personagemId}`)
+      .channel(nomeCanal(`conteudo-${personagemId}`))
       .on("postgres_changes", { event: "*", schema: "public", table: "personagem_cartas", filter: filtro }, () => {
         void recarregarCartas();
       })
