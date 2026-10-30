@@ -20,6 +20,8 @@ type Contexto = {
   /** Salva depois de uma pausa: para cliques seguidos em − e +. */
   salvarDepois: (patch: Partial<Personagem>, ms?: number) => void;
   setStatus: (status: StatusSalvamento) => void;
+  /** Busca a ficha de novo no banco (ex.: depois de uma RPC gastar PE). */
+  sincronizar: () => Promise<void>;
 };
 
 const FichaContexto = createContext<Contexto | null>(null);
@@ -105,6 +107,32 @@ export function FichaProvider({
     };
   }, [enviar]);
 
+  // mudança que veio do banco (mestre, Realtime ou RPC): vira o novo valor confirmado
+  const aplicarDoServidor = useCallback((linha: Personagem) => {
+    confirmado.current = linha;
+    setPersonagem({ ...linha, ...pendente.current });
+  }, []);
+
+  const sincronizar = useCallback(async () => {
+    const { data } = await supabase.from("personagens").select("*").eq("id", inicial.id).single();
+    if (data) aplicarDoServidor(data as Personagem);
+  }, [supabase, inicial.id, aplicarDoServidor]);
+
+  // ao vivo: o mestre mexe na ficha e o player vê na hora
+  useEffect(() => {
+    const canal = supabase
+      .channel(`ficha-${inicial.id}`)
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "personagens", filter: `id=eq.${inicial.id}` },
+        (payload) => aplicarDoServidor(payload.new as Personagem),
+      )
+      .subscribe();
+    return () => {
+      void supabase.removeChannel(canal);
+    };
+  }, [supabase, inicial.id, aplicarDoServidor]);
+
   const travado = useCallback(
     (trava: keyof Travas) => !souMestre && personagem.travas?.[trava] !== false,
     [souMestre, personagem.travas],
@@ -112,7 +140,18 @@ export function FichaProvider({
 
   return (
     <FichaContexto
-      value={{ personagem, souMestre, editando, setEditando, status, travado, salvar, salvarDepois, setStatus }}
+      value={{
+        personagem,
+        souMestre,
+        editando,
+        setEditando,
+        status,
+        travado,
+        salvar,
+        salvarDepois,
+        setStatus,
+        sincronizar,
+      }}
     >
       {children}
     </FichaContexto>

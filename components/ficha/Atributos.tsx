@@ -1,10 +1,11 @@
 "use client";
 
 import { cn } from "cn";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Contador, Travado } from "@/components/ficha/campos";
 import { useFicha } from "@/components/ficha/contexto";
+import { AcoesPE, UltimasRolagens, useRolador } from "@/components/ficha/rolador";
 import { Input } from "@/components/ui/input";
 import type { Atributo, Grupo } from "@/lib/ficha-tipos";
 import { createClient } from "@/lib/supabase/client";
@@ -31,12 +32,11 @@ function LosangoPE() {
             </span>
           </div>
         </div>
-        <div className="flex flex-col text-base leading-tight">
+        <div className="flex flex-col gap-1 leading-tight">
           <span className="font-heading text-xl">
             PE <span className="text-base text-muted-foreground">/ {p.pe_max}</span>
           </span>
-          <span className="text-muted-foreground">Reforçar −1</span>
-          <span className="text-muted-foreground">Refazer −2</span>
+          <AcoesPE />
         </div>
       </div>
       {editando &&
@@ -54,11 +54,32 @@ function LosangoPE() {
 }
 
 export function Atributos({ inicial }: { inicial: Atributo[] }) {
-  const { editando, travado, setStatus } = useFicha();
+  const { personagem, editando, travado, setStatus } = useFicha();
+  const { rolar, rolando, reforcar } = useRolador();
   const supabase = useMemo(() => createClient(), []);
   const [atributos, setAtributos] = useState(inicial);
   const confirmados = useRef(inicial);
   const podeEditar = editando && !travado("atributos");
+
+  // ao vivo: o mestre ajusta um atributo e ele muda aqui
+  useEffect(() => {
+    const canal = supabase
+      .channel(`atributos-${personagem.id}`)
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "atributos", filter: `personagem_id=eq.${personagem.id}` },
+        (payload) => {
+          const novo = payload.new as Atributo;
+          const trocar = (lista: Atributo[]) => lista.map((a) => (a.id === novo.id ? { ...a, valor: novo.valor } : a));
+          confirmados.current = trocar(confirmados.current);
+          setAtributos(trocar);
+        },
+      )
+      .subscribe();
+    return () => {
+      void supabase.removeChannel(canal);
+    };
+  }, [supabase, personagem.id]);
 
   async function salvarValor(id: string, texto: string) {
     const valor = Math.max(0, Math.min(100, Math.round(Number(texto))));
@@ -84,6 +105,11 @@ export function Atributos({ inicial }: { inicial: Atributo[] }) {
         <div>
           <h2 className="text-2xl tracking-wide">Jogue um D100</h2>
           <p className="text-lg text-muted-foreground">Para realizar uma ação tire menos que:</p>
+          {!editando && (
+            <p className="text-base text-muted-foreground/70">
+              {reforcar ? "Reforço armado: a próxima rolagem usa 2 dados." : "Toque num atributo para rolar."}
+            </p>
+          )}
           {editando && travado("atributos") && <Travado className="mt-1" />}
         </div>
         <LosangoPE />
@@ -97,36 +123,48 @@ export function Atributos({ inicial }: { inicial: Atributo[] }) {
               {atributos
                 .filter((a) => a.grupo === grupo)
                 .map((a) => (
-                  <li key={a.id} className="flex min-h-10 items-center gap-3">
+                  <li key={a.id}>
                     {podeEditar ? (
-                      <Input
-                        key={a.valor}
-                        type="number"
-                        inputMode="numeric"
-                        min={0}
-                        max={100}
-                        defaultValue={a.valor}
-                        aria-label={a.nome}
-                        onBlur={(e) => salvarValor(a.id, e.currentTarget.value)}
-                        className="h-9 w-16 text-center font-heading text-lg md:text-lg"
-                      />
+                      <div className="flex min-h-10 items-center gap-3">
+                        <Input
+                          key={a.valor}
+                          type="number"
+                          inputMode="numeric"
+                          min={0}
+                          max={100}
+                          defaultValue={a.valor}
+                          aria-label={a.nome}
+                          onBlur={(e) => salvarValor(a.id, e.currentTarget.value)}
+                          className="h-9 w-16 text-center font-heading text-lg md:text-lg"
+                        />
+                        <span className="font-heading text-base tracking-wide uppercase">{a.nome}</span>
+                      </div>
                     ) : (
-                      <span
-                        className={cn(
-                          "flex size-9 shrink-0 items-center justify-center rounded-full font-heading text-sm font-bold text-white tabular-nums",
-                          circulo,
-                        )}
+                      <button
+                        type="button"
+                        disabled={rolando || editando}
+                        onClick={() => rolar(a.id)}
+                        aria-label={`Rolar ${a.nome} (${a.valor})`}
+                        className="-mx-2 flex min-h-11 w-full items-center gap-3 rounded-lg px-2 text-left transition-colors hover:bg-secondary active:bg-accent disabled:hover:bg-transparent"
                       >
-                        {a.valor}
-                      </span>
+                        <span
+                          className={cn(
+                            "flex size-9 shrink-0 items-center justify-center rounded-full font-heading text-sm font-bold text-white tabular-nums",
+                            circulo,
+                          )}
+                        >
+                          {a.valor}
+                        </span>
+                        <span className="font-heading text-base tracking-wide uppercase">{a.nome}</span>
+                      </button>
                     )}
-                    <span className="font-heading text-base tracking-wide uppercase">{a.nome}</span>
                   </li>
                 ))}
             </ul>
           </div>
         ))}
       </div>
+      <UltimasRolagens />
     </section>
   );
 }

@@ -1,0 +1,235 @@
+"use client";
+
+import { Minus, Plus, RotateCcw, Shield, Skull, TrendingDown } from "lucide-react";
+import { cn } from "cn";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
+import { Resultado } from "@/components/ficha/rolador";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { corDoEstado, estadoDe, fundoDoEstado } from "@/lib/estado";
+import { LIMITE_CONGELADO, type Personagem, type Rolagem } from "@/lib/ficha-tipos";
+import type { CardPersonagem, DadosMesa } from "@/lib/mesa";
+import { createClient } from "@/lib/supabase/client";
+
+function mesclarRolagem(lista: Rolagem[], rolagem: Rolagem) {
+  return [rolagem, ...lista.filter((r) => r.id !== rolagem.id)]
+    .sort((a, b) => b.created_at.localeCompare(a.created_at))
+    .slice(0, 20);
+}
+
+function Card({ p, aoMudarVida }: { p: CardPersonagem; aoMudarVida: (vida: number) => void }) {
+  const estado = estadoDe(p.vida);
+  const porcentagem = Math.max(0, Math.min(100, (p.vida / p.vida_max) * 100));
+
+  return (
+    <li className="flex flex-col gap-3 rounded-xl border border-border bg-card p-4">
+      <div className="flex items-center gap-3">
+        <div className="h-16 w-13 shrink-0 overflow-hidden rounded-[50%] border border-white/15 bg-secondary">
+          {p.retratoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element -- URL assinada do Supabase
+            <img src={p.retratoUrl} alt="" className="size-full object-cover" />
+          ) : (
+            <span className="flex size-full items-center justify-center font-heading text-2xl text-white/25">
+              {p.nome.charAt(0)}
+            </span>
+          )}
+        </div>
+        <div className="min-w-0 flex-1">
+          <h3 className="truncate text-xl font-bold tracking-wide uppercase">{p.nome}</h3>
+          <p className="truncate text-base text-muted-foreground">{p.jogador}</p>
+        </div>
+        <span className={cn("font-heading text-base", corDoEstado[estado])}>{estado}</span>
+      </div>
+
+      <div className="flex items-center gap-2">
+        <Button variant="outline" className="size-10" aria-label={`Diminuir vida de ${p.nome}`} disabled={p.vida <= 0} onClick={() => aoMudarVida(p.vida - 1)}>
+          <Minus />
+        </Button>
+        <span className="min-w-20 rounded-full bg-sangue px-3 py-0.5 text-center font-heading text-xl tabular-nums">
+          {p.vida}/{p.vida_max}
+        </span>
+        <Button variant="outline" className="size-10" aria-label={`Aumentar vida de ${p.nome}`} disabled={p.vida >= p.vida_max} onClick={() => aoMudarVida(p.vida + 1)}>
+          <Plus />
+        </Button>
+        <div className="ml-1 h-2 flex-1 overflow-hidden rounded-full bg-secondary">
+          <div className={cn("h-full transition-all", fundoDoEstado[estado])} style={{ width: `${porcentagem}%` }} />
+        </div>
+      </div>
+
+      <dl className="grid grid-cols-4 gap-2 text-center">
+        {[
+          { rotulo: "PE", valor: `${p.pe}/${p.pe_max}`, cor: "text-ouro" },
+          { rotulo: "Corrup.", valor: p.corrupcao, cor: "text-corrupcao" },
+          { rotulo: "Defesa", valor: p.defesa, cor: "" },
+          { rotulo: "Congel.", valor: p.congelado, cor: p.congelado > LIMITE_CONGELADO ? "text-congelado" : "" },
+        ].map(({ rotulo, valor, cor }) => (
+          <div key={rotulo} className="rounded-md bg-secondary/60 py-1">
+            <dt className="font-heading text-[0.65rem] tracking-widest text-muted-foreground uppercase">{rotulo}</dt>
+            <dd className={cn("font-heading text-lg tabular-nums", cor)}>{valor}</dd>
+          </div>
+        ))}
+      </dl>
+
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-base text-muted-foreground">
+          {p.itens} {p.itens === 1 ? "item" : "itens"}
+        </span>
+        <Link href={`/ficha/${p.id}`} className={buttonVariants({ variant: "outline", size: "lg" })}>
+          Abrir e editar ficha
+        </Link>
+      </div>
+    </li>
+  );
+}
+
+function FeedRolagens({ rolagens, nomes }: { rolagens: Rolagem[]; nomes: Map<string, string> }) {
+  return (
+    <section className="flex flex-col gap-3">
+      <h2 className="flex items-center gap-2 text-lg tracking-wide">
+        <span className="size-2 animate-pulse rounded-full bg-instavel" aria-hidden /> Rolagens ao vivo
+      </h2>
+      {rolagens.length ? (
+        <ul className="flex flex-col gap-2" aria-live="polite">
+          {rolagens.map((r) => (
+            <li key={r.id} className="flex items-center gap-3 rounded-lg border border-border bg-card px-3 py-2">
+              <Resultado rolagem={r} className="w-10 text-center text-2xl" />
+              <div className="min-w-0 flex-1 leading-tight">
+                <p className="truncate text-base">
+                  <span className="font-bold">{nomes.get(r.personagem_id) ?? "?"}</span>{" "}
+                  <span className="uppercase">{r.atributo}</span>{" "}
+                  <span className="text-muted-foreground">≤ {r.alvo}</span>
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  {r.sucesso ? "Sucesso" : "Falha"}
+                  {r.reforcado && ` · reforçado (${r.dados?.join(" e ")})`}
+                  {r.refeitos > 0 && ` · refeito ${r.refeitos}×`}
+                </p>
+              </div>
+              {r.refeitos > 0 && <RotateCcw className="size-4 text-muted-foreground" aria-hidden />}
+              <time className="text-sm text-muted-foreground tabular-nums" suppressHydrationWarning>
+                {new Date(r.created_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+              </time>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="text-base text-muted-foreground">Nenhuma rolagem ainda nesta mesa.</p>
+      )}
+    </section>
+  );
+}
+
+// Painel do mestre: fichas e rolagens chegam sozinhas pelo Realtime.
+export function MesaAoVivo({ campanhaId, inicial }: { campanhaId: string; inicial: DadosMesa }) {
+  const supabase = useMemo(() => createClient(), []);
+  const router = useRouter();
+  const [personagens, setPersonagens] = useState(inicial.personagens);
+  const [rolagens, setRolagens] = useState(inicial.rolagens);
+  const confirmados = useRef(inicial.personagens);
+  const timers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
+
+  useEffect(() => {
+    const pendentes = timers.current;
+    const canal = supabase
+      .channel(`mesa-${campanhaId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "personagens", filter: `campanha_id=eq.${campanhaId}` },
+        (payload) => {
+          const novo = payload.new as Personagem;
+          const antigo = confirmados.current.find((p) => p.id === novo?.id);
+          // ficha nova, apagada ou retrato trocado: o servidor recarrega (nome do jogador, URL da foto)
+          if (payload.eventType !== "UPDATE" || !antigo || antigo.retrato_path !== novo.retrato_path) {
+            router.refresh();
+            return;
+          }
+          const atualizar = (lista: CardPersonagem[]) =>
+            lista.map((p) => (p.id === novo.id ? { ...p, ...pick(novo) } : p));
+          confirmados.current = atualizar(confirmados.current);
+          // não atropela um clique do mestre que ainda vai ser salvo
+          if (!pendentes.has(novo.id)) setPersonagens(atualizar);
+        },
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "rolagens", filter: `campanha_id=eq.${campanhaId}` },
+        (payload) => {
+          if (payload.eventType !== "DELETE") setRolagens((lista) => mesclarRolagem(lista, payload.new as Rolagem));
+        },
+      )
+      .subscribe();
+    return () => {
+      pendentes.forEach(clearTimeout);
+      void supabase.removeChannel(canal);
+    };
+  }, [supabase, campanhaId, router]);
+
+  function mudarVida(id: string, vida: number) {
+    setPersonagens((lista) => lista.map((p) => (p.id === id ? { ...p, vida } : p)));
+    clearTimeout(timers.current.get(id));
+    timers.current.set(
+      id,
+      setTimeout(async () => {
+        timers.current.delete(id);
+        const { error } = await supabase.from("personagens").update({ vida }).eq("id", id);
+        if (error) {
+          toast.error(error.message);
+          setPersonagens(confirmados.current);
+        }
+      }, 500),
+    );
+  }
+
+  const nomes = new Map(personagens.map((p) => [p.id, p.nome]));
+  const pior = personagens.length ? personagens.reduce((a, b) => (b.vida < a.vida ? b : a)) : null;
+  const corrompido = personagens.length ? personagens.reduce((a, b) => (b.corrupcao > a.corrupcao ? b : a)) : null;
+
+  return (
+    <div className="grid gap-8 lg:grid-cols-[1fr_340px]">
+      <div className="flex flex-col gap-5">
+        {pior && corrompido && (
+          <div className="grid gap-3 sm:grid-cols-2">
+            <p className="flex items-center gap-3 rounded-lg border border-instavel/40 bg-instavel/10 px-4 py-2 text-lg">
+              <TrendingDown className="size-5 text-instavel" aria-hidden />
+              <span>
+                Pior: <b>{pior.nome}</b>{" "}
+                <span className="text-muted-foreground">
+                  ({pior.vida}/{pior.vida_max})
+                </span>
+              </span>
+            </p>
+            <p className="flex items-center gap-3 rounded-lg border border-corrupcao/40 bg-corrupcao/10 px-4 py-2 text-lg">
+              <Skull className="size-5 text-corrupcao" aria-hidden />
+              <span>
+                Mais corrupção: <b>{corrompido.nome}</b>{" "}
+                <span className="text-muted-foreground">({corrompido.corrupcao})</span>
+              </span>
+            </p>
+          </div>
+        )}
+        {personagens.length ? (
+          <ul className="grid gap-4 xl:grid-cols-2">
+            {personagens.map((p) => (
+              <Card key={p.id} p={p} aoMudarVida={(vida) => mudarVida(p.id, vida)} />
+            ))}
+          </ul>
+        ) : (
+          <p className="flex items-center gap-2 text-lg text-muted-foreground">
+            <Shield className="size-5" /> Nenhuma ficha ainda. Passe o código de convite para os jogadores.
+          </p>
+        )}
+      </div>
+      <aside className="lg:sticky lg:top-4 lg:self-start">
+        <FeedRolagens rolagens={rolagens} nomes={nomes} />
+      </aside>
+    </div>
+  );
+}
+
+// só os campos que o card mostra (o resto da linha não interessa aqui)
+function pick(p: Personagem) {
+  const { nome, vida, vida_max, pe, pe_max, corrupcao, defesa, congelado } = p;
+  return { nome, vida, vida_max, pe, pe_max, corrupcao, defesa, congelado };
+}

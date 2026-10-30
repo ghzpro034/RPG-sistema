@@ -1,48 +1,27 @@
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
+import { MesaAoVivo } from "@/components/mesa/MesaAoVivo";
+import { carregarMesa } from "@/lib/mesa";
 import { obterSessao } from "@/lib/sessao";
-import { createClient } from "@/lib/supabase/server";
 
-// Provisório: código de convite e lista de fichas. O painel ao vivo é a Fase 3.
 async function Painel() {
   const sessao = await obterSessao();
   if (sessao?.papel !== "mestre" || !sessao.campanha) redirect("/");
 
-  const supabase = await createClient();
-  const { data: personagens } = await supabase
-    .from("personagens")
-    .select("id, nome, vida, vida_max, pe, profiles(nome)")
-    .eq("campanha_id", sessao.campanha.id)
-    .order("nome");
+  const dados = await carregarMesa(sessao.campanha.id);
+  // remonta quando muda quem está na mesa ou um retrato (o servidor manda os dados novos)
+  const chave = dados.personagens.map((p) => `${p.id}:${p.retrato_path}`).join("|");
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-3xl tracking-wide">{sessao.campanha.nome}</h1>
-        <p className="mt-2 text-lg text-muted-foreground">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <h1 className="text-3xl font-bold tracking-wide uppercase">{sessao.campanha.nome}</h1>
+        <p className="text-lg text-muted-foreground">
           Código de convite:{" "}
-          <span className="font-heading text-xl tracking-[0.3em] text-ouro">
-            {sessao.campanha.codigo_convite}
-          </span>
+          <span className="font-heading text-xl tracking-[0.3em] text-ouro">{sessao.campanha.codigo_convite}</span>
         </p>
       </div>
-      {personagens?.length ? (
-        <ul className="grid gap-3 sm:grid-cols-2">
-          {personagens.map((p) => (
-            <li key={p.id} className="rounded-lg border border-border bg-card p-4">
-              <p className="text-xl">{p.nome}</p>
-              <p className="text-base text-muted-foreground">
-                {(p.profiles as unknown as { nome: string } | null)?.nome} · Vida {p.vida}/{p.vida_max}{" "}
-                · PE {p.pe}
-              </p>
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p className="text-lg text-muted-foreground">
-          Nenhuma ficha ainda. Passe o código para os jogadores entrarem na mesa.
-        </p>
-      )}
+      <MesaAoVivo key={chave} campanhaId={sessao.campanha.id} inicial={dados} />
     </div>
   );
 }

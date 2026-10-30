@@ -7,6 +7,8 @@ import { Cabecalho } from "@/components/ficha/Cabecalho";
 import { Conhecimento } from "@/components/ficha/Conhecimento";
 import { FichaProvider, useFicha, type StatusSalvamento } from "@/components/ficha/contexto";
 import { Inventario } from "@/components/ficha/Inventario";
+import { PainelResultado, RoladorProvider } from "@/components/ficha/rolador";
+import { Travas } from "@/components/ficha/Travas";
 import { Vitais } from "@/components/ficha/Vitais";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -43,29 +45,34 @@ function BarraEdicao() {
 export function Ficha({ dados }: { dados: DadosFicha }) {
   return (
     <FichaProvider inicial={dados.personagem} souMestre={dados.souMestre}>
-      <div className="flex flex-col gap-8">
-        <BarraEdicao />
-        <Cabecalho retratoInicial={dados.retratoUrl} cartas={dados.cartas} />
-        <Vitais />
-        <Atributos inicial={dados.atributos} />
+      <RoladorProvider>
+        {/* pb-28: espaço para o painel do resultado, que fica preso embaixo */}
+        <div className="flex flex-col gap-8 pb-28">
+          <BarraEdicao />
+          {dados.souMestre && <Travas />}
+          <Cabecalho retratoInicial={dados.retratoUrl} cartas={dados.cartas} />
+          <Vitais />
+          <Atributos inicial={dados.atributos} />
 
-        <Tabs defaultValue="baralho" className="gap-4">
-          <TabsList className="h-11! w-full">
-            <TabsTrigger value="baralho" className="text-base">Baralho</TabsTrigger>
-            <TabsTrigger value="inventario" className="text-base">Inventário</TabsTrigger>
-            <TabsTrigger value="conhecimento" className="text-base">Conhecimento</TabsTrigger>
-          </TabsList>
-          <TabsContent value="baralho">
-            <Baralho cartas={dados.cartas} />
-          </TabsContent>
-          <TabsContent value="inventario">
-            <Inventario inicial={dados.inventario} />
-          </TabsContent>
-          <TabsContent value="conhecimento">
-            <Conhecimento />
-          </TabsContent>
-        </Tabs>
-      </div>
+          <Tabs defaultValue="baralho" className="gap-4">
+            <TabsList className="h-11! w-full">
+              <TabsTrigger value="baralho" className="text-base">Baralho</TabsTrigger>
+              <TabsTrigger value="inventario" className="text-base">Inventário</TabsTrigger>
+              <TabsTrigger value="conhecimento" className="text-base">Conhecimento</TabsTrigger>
+            </TabsList>
+            <TabsContent value="baralho">
+              <Baralho cartas={dados.cartas} />
+            </TabsContent>
+            <TabsContent value="inventario">
+              <Inventario inicial={dados.inventario} />
+            </TabsContent>
+            <TabsContent value="conhecimento">
+              <Conhecimento />
+            </TabsContent>
+          </Tabs>
+        </div>
+        <PainelResultado />
+      </RoladorProvider>
     </FichaProvider>
   );
 }

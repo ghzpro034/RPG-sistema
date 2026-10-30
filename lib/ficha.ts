@@ -9,10 +9,10 @@ import {
   type Personagem,
 } from "@/lib/ficha-tipos";
 
-type Supabase = Awaited<ReturnType<typeof createClient>>;
+export type Supabase = Awaited<ReturnType<typeof createClient>>;
 
 // Gera as URLs assinadas de várias imagens de uma vez.
-async function assinar(supabase: Supabase, caminhos: (string | null)[]) {
+export async function assinar(supabase: Supabase, caminhos: (string | null)[]) {
   const validos = [...new Set(caminhos.filter((c): c is string => Boolean(c)))];
   if (!validos.length) return new Map<string, string>();
   const { data } = await supabase.storage.from(BUCKET_IMAGENS).createSignedUrls(validos, VALIDADE_URL);

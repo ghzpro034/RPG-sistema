@@ -62,6 +62,24 @@ export type ItemInventario = {
   };
 };
 
+export type Rolagem = {
+  id: string;
+  campanha_id: string;
+  personagem_id: string;
+  atributo: string;
+  alvo: number;
+  resultado: number;
+  sucesso: boolean;
+  /** os dados da última jogada: 1, ou 2 quando reforçada */
+  dados: number[];
+  reforcado: boolean;
+  refeitos: number;
+  created_at: string;
+};
+
+export const CUSTO_REFORCAR = 1;
+export const CUSTO_REFAZER = 2;
+
 export type DadosFicha = {
   personagem: Personagem;
   retratoUrl: string | null;
