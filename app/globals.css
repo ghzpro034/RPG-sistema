@@ -16,6 +16,14 @@
   --color-ferido: var(--ferido);
   --color-instavel: var(--instavel);
   --color-corrupcao: var(--corrupcao);
+  --color-caminho: var(--caminho);
+  --color-forca: var(--forca);
+  --color-mental: var(--mental);
+  --color-social: var(--social);
+  --color-congelado: var(--congelado);
+  --color-comum: var(--comum);
+  --color-incomum: var(--incomum);
+  --color-unico: var(--unico);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -55,48 +63,56 @@
 }
 
 :root {
-  /* Grimório: tinta escura, pergaminho e ouro. Tema único (escuro). */
-  --background: oklch(0.16 0.012 60);
-  --foreground: oklch(0.92 0.03 85);
-  --card: oklch(0.21 0.015 60);
-  --card-foreground: oklch(0.92 0.03 85);
-  --popover: oklch(0.21 0.015 60);
-  --popover-foreground: oklch(0.92 0.03 85);
-  --primary: oklch(0.78 0.12 85);
-  --primary-foreground: oklch(0.18 0.015 60);
-  --secondary: oklch(0.26 0.018 60);
-  --secondary-foreground: oklch(0.92 0.03 85);
-  --muted: oklch(0.26 0.018 60);
-  --muted-foreground: oklch(0.7 0.03 80);
-  --accent: oklch(0.3 0.03 70);
-  --accent-foreground: oklch(0.92 0.03 85);
-  --destructive: oklch(0.58 0.19 25);
-  --border: oklch(0.78 0.12 85 / 22%);
-  --input: oklch(0.78 0.12 85 / 28%);
-  --ring: oklch(0.78 0.12 85 / 60%);
-  --chart-1: oklch(0.78 0.12 85);
-  --chart-2: oklch(0.58 0.19 25);
-  --chart-3: oklch(0.65 0.12 150);
-  --chart-4: oklch(0.6 0.15 300);
-  --chart-5: oklch(0.7 0.03 80);
+  /* Grimório: preto puro e acentos coloridos, como a ficha do Canva. Tema único (escuro). */
+  --background: oklch(0.06 0 0);
+  --foreground: oklch(0.96 0 0);
+  --card: oklch(0.15 0 0);
+  --card-foreground: oklch(0.96 0 0);
+  --popover: oklch(0.15 0 0);
+  --popover-foreground: oklch(0.96 0 0);
+  --primary: oklch(0.8 0.15 78);
+  --primary-foreground: oklch(0.12 0 0);
+  --secondary: oklch(0.21 0 0);
+  --secondary-foreground: oklch(0.96 0 0);
+  --muted: oklch(0.21 0 0);
+  --muted-foreground: oklch(0.7 0 0);
+  --accent: oklch(0.25 0 0);
+  --accent-foreground: oklch(0.96 0 0);
+  --destructive: oklch(0.6 0.21 25);
+  --border: oklch(1 0 0 / 14%);
+  --input: oklch(1 0 0 / 18%);
+  --ring: oklch(0.8 0.15 78 / 60%);
+  --chart-1: oklch(0.8 0.15 78);
+  --chart-2: oklch(0.6 0.21 25);
+  --chart-3: oklch(0.6 0.14 155);
+  --chart-4: oklch(0.55 0.2 320);
+  --chart-5: oklch(0.72 0.13 235);
   --radius: 0.5rem;
-  --sidebar: oklch(0.19 0.014 60);
-  --sidebar-foreground: oklch(0.92 0.03 85);
-  --sidebar-primary: oklch(0.78 0.12 85);
-  --sidebar-primary-foreground: oklch(0.18 0.015 60);
-  --sidebar-accent: oklch(0.26 0.018 60);
-  --sidebar-accent-foreground: oklch(0.92 0.03 85);
-  --sidebar-border: oklch(0.78 0.12 85 / 22%);
-  --sidebar-ring: oklch(0.78 0.12 85 / 60%);
+  --sidebar: oklch(0.1 0 0);
+  --sidebar-foreground: oklch(0.96 0 0);
+  --sidebar-primary: oklch(0.8 0.15 78);
+  --sidebar-primary-foreground: oklch(0.12 0 0);
+  --sidebar-accent: oklch(0.21 0 0);
+  --sidebar-accent-foreground: oklch(0.96 0 0);
+  --sidebar-border: oklch(1 0 0 / 14%);
+  --sidebar-ring: oklch(0.8 0.15 78 / 60%);
 
   /* tokens da ficha */
-  --ouro: oklch(0.78 0.12 85);
-  --sangue: oklch(0.52 0.19 25);
-  --pergaminho: oklch(0.92 0.03 85);
-  --estavel: oklch(0.68 0.12 150);
-  --ferido: oklch(0.75 0.14 70);
-  --instavel: oklch(0.6 0.2 25);
-  --corrupcao: oklch(0.58 0.16 300);
+  --ouro: oklch(0.8 0.15 78);
+  --sangue: oklch(0.42 0.16 25);
+  --pergaminho: oklch(0.96 0 0);
+  --caminho: oklch(0.76 0.16 62);
+  --estavel: oklch(0.58 0.14 150);
+  --ferido: oklch(0.82 0.15 85);
+  --instavel: oklch(0.6 0.22 27);
+  --corrupcao: oklch(0.55 0.2 320);
+  --forca: oklch(0.6 0.22 27);
+  --mental: oklch(0.72 0.13 235);
+  --social: oklch(0.58 0.14 150);
+  --congelado: oklch(0.82 0.08 230);
+  --comum: oklch(0.96 0 0);
+  --incomum: oklch(0.55 0.18 262);
+  --unico: oklch(0.65 0.14 320);
 }
 
 @layer base {
