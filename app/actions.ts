@@ -1,7 +1,10 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { z } from "zod";
+import { COOKIE_MESA } from "@/lib/sessao";
 import { createClient } from "@/lib/supabase/server";
 
 export type EstadoForm = { erro?: string } | undefined;
@@ -62,9 +65,23 @@ export async function criarCampanha(_: EstadoForm, form: FormData): Promise<Esta
   if (!nome) return { erro: "Dê um nome para a mesa" };
 
   const supabase = await createClient();
-  const { error } = await supabase.rpc("criar_campanha", { p_nome: nome });
+  const { data, error } = await supabase.rpc("criar_campanha", { p_nome: nome });
   if (error) return { erro: error.message };
+  await abrirMesa((data as { id: string }).id);
   redirect("/mesa");
+}
+
+// guarda qual mesa está aberta (o usuário pode estar em várias)
+async function abrirMesa(id: string) {
+  const cookieStore = await cookies();
+  cookieStore.set(COOKIE_MESA, id, { path: "/", maxAge: 60 * 60 * 24 * 365, sameSite: "lax" });
+}
+
+export async function trocarMesa(form: FormData) {
+  const id = String(form.get("mesa") ?? "");
+  if (id) await abrirMesa(id);
+  revalidatePath("/", "layout");
+  redirect("/");
 }
 
 export async function entrarCampanha(_: EstadoForm, form: FormData): Promise<EstadoForm> {
@@ -72,9 +89,11 @@ export async function entrarCampanha(_: EstadoForm, form: FormData): Promise<Est
   if (!codigo) return { erro: "Digite o código que o mestre passou" };
 
   const supabase = await createClient();
-  const { error } = await supabase.rpc("entrar_campanha", { p_codigo: codigo });
+  const { data, error } = await supabase.rpc("entrar_campanha", { p_codigo: codigo });
   if (error) return { erro: error.message };
-  redirect("/comecar");
+  // quem já tem personagem entra com ele na mesa nova; quem não tem cria em /comecar
+  await abrirMesa(data as string);
+  redirect("/");
 }
 
 export async function criarPersonagem(_: EstadoForm, form: FormData): Promise<EstadoForm> {

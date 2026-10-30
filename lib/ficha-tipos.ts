@@ -103,6 +103,8 @@ export type DadosFicha = {
   gracas: Graca[];
   /** cartas do catálogo da campanha, para o mestre dar ao personagem (vazio para o player) */
   catalogoCartas: Carta[];
+  /** mesa aberta agora: a rolagem aparece nela (a ficha pode estar em várias) */
+  campanhaAtual: string;
   souMestre: boolean;
 };
 

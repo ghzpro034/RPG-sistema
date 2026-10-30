@@ -1,53 +1,54 @@
+import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 
 export type Papel = "mestre" | "player";
 
+export type Mesa = { id: string; nome: string; codigo_convite: string; papel: Papel };
+
 export type Sessao = {
   userId: string;
   nome: string;
-  campanha: { id: string; nome: string; codigo_convite: string } | null;
+  /** todas as mesas do usuário (como mestre ou player) */
+  mesas: Mesa[];
+  /** a mesa escolhida agora; o papel vale para ela */
+  campanha: Mesa | null;
   papel: Papel | null;
+  /** um personagem por player; a mesma ficha pode estar em várias mesas */
   personagemId: string | null;
 };
 
-// Quem está logado, em qual mesa e com qual papel. Por enquanto, uma mesa por usuário.
+export const COOKIE_MESA = "grimorio_mesa";
+
+// Quem está logado, em quais mesas, qual está aberta e com qual papel.
 export async function obterSessao(): Promise<Sessao | null> {
   const supabase = await createClient();
   const { data } = await supabase.auth.getClaims();
   const userId = data?.claims?.sub;
   if (!userId) return null;
 
-  const [{ data: perfil }, { data: membro }] = await Promise.all([
+  const [{ data: perfil }, { data: membros }, { data: personagem }, cookieStore] = await Promise.all([
     supabase.from("profiles").select("nome").eq("id", userId).maybeSingle(),
-    supabase
-      .from("membros")
-      .select("papel, campanhas(id, nome, codigo_convite)")
-      .eq("user_id", userId)
-      .order("papel")
-      .limit(1)
-      .maybeSingle(),
+    supabase.from("membros").select("papel, campanhas(id, nome, codigo_convite)").eq("user_id", userId),
+    supabase.from("personagens").select("id").eq("dono_id", userId).limit(1).maybeSingle(),
+    cookies(),
   ]);
 
   // sem os tipos gerados do banco, o supabase-js tipa a relação como lista
-  const campanha = (membro?.campanhas as unknown as Sessao["campanha"]) ?? null;
-  let personagemId: string | null = null;
-  if (campanha) {
-    const { data: personagem } = await supabase
-      .from("personagens")
-      .select("id")
-      .eq("campanha_id", campanha.id)
-      .eq("dono_id", userId)
-      .limit(1)
-      .maybeSingle();
-    personagemId = personagem?.id ?? null;
-  }
+  const mesas = (membros ?? [])
+    .map((m) => ({ ...(m.campanhas as unknown as Omit<Mesa, "papel">), papel: m.papel as Papel }))
+    .filter((m) => m.id)
+    .sort((a, b) => a.nome.localeCompare(b.nome));
+
+  const escolhida = cookieStore.get(COOKIE_MESA)?.value;
+  const campanha = mesas.find((m) => m.id === escolhida) ?? mesas[0] ?? null;
 
   return {
     userId,
     nome: perfil?.nome ?? "Jogador",
+    mesas,
     campanha,
-    papel: (membro?.papel as Papel) ?? null,
-    personagemId,
+    papel: campanha?.papel ?? null,
+    personagemId: personagem?.id ?? null,
   };
 }
 

@@ -76,10 +76,10 @@ function CampoImagem({ atual, aoEscolher }: { atual: string | null; aoEscolher: 
 type Edicao = { tipo: "item"; valor: ItemCatalogo | null } | { tipo: "carta"; valor: Carta | null };
 
 export function Catalogo({
-  campanhaId,
+  mestreId,
   inicial,
 }: {
-  campanhaId: string;
+  mestreId: string;
   inicial: { itens: ItemCatalogo[]; cartas: Carta[] };
 }) {
   const supabase = useMemo(() => createClient(), []);
@@ -125,12 +125,12 @@ export function Catalogo({
       const antigo = edicao.valor;
       const { data, error } = antigo
         ? await supabase.from(tabela).update(dados).eq("id", antigo.id).select().single()
-        : await supabase.from(tabela).insert({ ...dados, campanha_id: campanhaId }).select().single();
+        : await supabase.from(tabela).insert({ ...dados, mestre_id: mestreId }).select().single();
       if (error) throw error;
 
       let linha = { ...data, imagemUrl: antigo?.imagemUrl ?? null };
       if (imagem) {
-        const { caminho, url } = await enviarImagemCatalogo(supabase, tabela, campanhaId, data.id, imagem);
+        const { caminho, url } = await enviarImagemCatalogo(supabase, tabela, mestreId, data.id, imagem);
         const troca = await supabase.from(tabela).update({ imagem_path: caminho }).eq("id", data.id);
         if (troca.error) throw troca.error;
         if (antigo?.imagem_path) await supabase.storage.from(BUCKET_IMAGENS).remove([antigo.imagem_path]);

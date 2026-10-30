@@ -1,3 +1,4 @@
+import { ChevronsUpDown } from "lucide-react";
 import Link from "next/link";
 import { Suspense } from "react";
 import { sair } from "@/app/actions";
@@ -7,21 +8,28 @@ import { obterSessao } from "@/lib/sessao";
 async function Usuario() {
   const sessao = await obterSessao();
   return (
-    <div className="flex items-center gap-1 sm:gap-3">
+    <div className="flex min-w-0 items-center gap-1 sm:gap-3">
+      {/* mesa aberta; toque para trocar ou criar outra */}
+      {sessao?.campanha && (
+        <Link
+          href="/mesas"
+          className={buttonVariants({ variant: "outline", size: "sm", className: "max-w-40 min-w-0 sm:max-w-60" })}
+        >
+          <span className="truncate">{sessao.campanha.nome}</span>
+          <ChevronsUpDown className="text-muted-foreground" />
+        </Link>
+      )}
       {sessao?.papel === "mestre" && (
-        <nav className="flex items-center gap-1" aria-label="Mestre">
+        <nav className="flex items-center" aria-label="Mestre">
           <Link href="/mesa" className={buttonVariants({ variant: "ghost", size: "sm" })}>
-            Mesa
+            Painel
           </Link>
           <Link href="/catalogo" className={buttonVariants({ variant: "ghost", size: "sm" })}>
             Catálogo
           </Link>
         </nav>
       )}
-      <span className="hidden text-base text-muted-foreground sm:inline">
-        {sessao?.nome}
-        {sessao?.papel === "mestre" && " · Mestre"}
-      </span>
+      <span className="hidden text-base text-muted-foreground lg:inline">{sessao?.nome}</span>
       <form action={sair}>
         <Button type="submit" variant="ghost" size="sm">
           Sair
@@ -34,8 +42,8 @@ async function Usuario() {
 export default function MesaLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
-      <header className="flex items-center justify-between border-b border-border px-4 py-3">
-        <Link href="/" className="font-heading text-sm tracking-[0.3em] text-ouro">
+      <header className="flex items-center justify-between gap-2 border-b border-border px-4 py-3">
+        <Link href="/" className="shrink-0 font-heading text-sm tracking-[0.3em] text-ouro">
           GRIMÓRIO
         </Link>
         <Suspense>

@@ -116,7 +116,7 @@ function Conteudo({ dados }: { dados: DadosFicha }) {
 export function Ficha({ dados }: { dados: DadosFicha }) {
   return (
     <FichaProvider inicial={dados.personagem} souMestre={dados.souMestre}>
-      <RoladorProvider>
+      <RoladorProvider campanhaAtual={dados.campanhaAtual}>
         {/* pb-28: espaço para o painel do resultado, que fica preso embaixo */}
         <div className="flex flex-col gap-8 pb-28">
           <BarraEdicao />

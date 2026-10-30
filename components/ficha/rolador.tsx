@@ -36,7 +36,7 @@ function mesclar(lista: Rolagem[], rolagem: Rolagem) {
 }
 
 // O dado é rolado no banco (RPC); aqui só pedimos e mostramos.
-export function RoladorProvider({ children }: { children: React.ReactNode }) {
+export function RoladorProvider({ campanhaAtual, children }: { campanhaAtual: string; children: React.ReactNode }) {
   const { personagem, sincronizar } = useFicha();
   const supabase = useMemo(() => createClient(), []);
   const [reforcar, setReforcar] = useState(false);
@@ -91,12 +91,16 @@ export function RoladorProvider({ children }: { children: React.ReactNode }) {
   const rolar = useCallback(
     async (atributoId: string) => {
       setRolando(true);
-      const { data, error } = await supabase.rpc("rolar_d100", { p_atributo_id: atributoId, p_reforcar: reforcar });
+      const { data, error } = await supabase.rpc("rolar_d100", {
+        p_atributo_id: atributoId,
+        p_reforcar: reforcar,
+        p_campanha: campanhaAtual,
+      });
       setReforcar(false);
       await depoisDaRpc(data, error);
       setRolando(false);
     },
-    [supabase, reforcar, depoisDaRpc],
+    [supabase, reforcar, campanhaAtual, depoisDaRpc],
   );
 
   const refazer = useCallback(async () => {

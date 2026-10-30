@@ -5,13 +5,14 @@ import { carregarCatalogo } from "@/lib/conteudo";
 import { obterSessao } from "@/lib/sessao";
 import { createClient } from "@/lib/supabase/server";
 
-// Mestre: cria e edita os itens e as cartas da campanha.
+// Mestre: cria e edita os itens e as cartas (um catálogo só, para todas as mesas dele).
 async function ConteudoCatalogo() {
   const sessao = await obterSessao();
   if (sessao?.papel !== "mestre" || !sessao.campanha) redirect("/");
 
-  const dados = await carregarCatalogo(await createClient(), sessao.campanha.id);
-  return <Catalogo campanhaId={sessao.campanha.id} inicial={dados} />;
+  // um catálogo só do mestre, valendo em todas as mesas dele
+  const dados = await carregarCatalogo(await createClient(), sessao.userId);
+  return <Catalogo mestreId={sessao.userId} inicial={dados} />;
 }
 
 export default function CatalogoPage() {

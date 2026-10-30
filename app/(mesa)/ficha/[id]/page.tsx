@@ -9,11 +9,11 @@ import { obterSessao } from "@/lib/sessao";
 // Mestre: abre e edita a ficha de qualquer personagem da mesa.
 async function FichaDoMestre({ params }: { params: Promise<{ id: string }> }) {
   const [{ id }, sessao] = await Promise.all([params, obterSessao()]);
-  if (sessao?.papel !== "mestre") redirect("/");
+  if (sessao?.papel !== "mestre" || !sessao.campanha) redirect("/");
 
-  // o RLS só devolve fichas da campanha deste mestre
-  const dados = await carregarFicha(id, true);
-  if (!dados || dados.personagem.campanha_id !== sessao.campanha?.id) notFound();
+  // o RLS só devolve fichas que estão em alguma mesa deste mestre
+  const dados = await carregarFicha(id, { mestreId: sessao.userId, campanhaAtual: sessao.campanha.id });
+  if (!dados) notFound();
 
   return <Ficha dados={dados} />;
 }

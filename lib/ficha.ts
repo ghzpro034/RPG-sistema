@@ -3,7 +3,12 @@ import type { Atributo, DadosFicha, Personagem } from "@/lib/ficha-tipos";
 import { createClient } from "@/lib/supabase/server";
 
 // Tudo o que a ficha mostra, já com as URLs das imagens. O RLS decide o que volta.
-export async function carregarFicha(personagemId: string, souMestre: boolean): Promise<DadosFicha | null> {
+// mestreId: quem está abrindo como mestre (para listar o catálogo dele); campanhaAtual: mesa aberta agora
+export async function carregarFicha(
+  personagemId: string,
+  { mestreId, campanhaAtual }: { mestreId: string | null; campanhaAtual: string },
+): Promise<DadosFicha | null> {
+  const souMestre = mestreId !== null;
   const supabase = await createClient();
 
   const { data: personagem } = await supabase.from("personagens").select("*").eq("id", personagemId).maybeSingle();
@@ -15,7 +20,7 @@ export async function carregarFicha(personagemId: string, souMestre: boolean): P
     carregarInventario(supabase, personagemId),
     carregarGracas(supabase, personagemId),
     assinar(supabase, [personagem.retrato_path]),
-    souMestre ? carregarCatalogo(supabase, personagem.campanha_id) : null,
+    mestreId ? carregarCatalogo(supabase, mestreId) : null,
   ]);
 
   return {
@@ -26,6 +31,7 @@ export async function carregarFicha(personagemId: string, souMestre: boolean): P
     inventario,
     gracas,
     catalogoCartas: catalogo?.cartas ?? [],
+    campanhaAtual,
     souMestre,
   };
 }

@@ -12,17 +12,17 @@ export function comprimirParaWebp(arquivo: File, ladoMaximo = 800) {
   });
 }
 
-// Imagem do catálogo do mestre: {campanha}/{itens|cartas}/{id}.{carimbo}.webp
+// Imagem do catálogo do mestre: {mestre}/{itens|cartas}/{id}.{carimbo}.webp
 // (nome novo a cada troca para a imagem antiga não ficar presa no cache)
 export async function enviarImagemCatalogo(
   supabase: SupabaseClient,
   pasta: "itens" | "cartas",
-  campanhaId: string,
+  mestreId: string,
   id: string,
   arquivo: File,
 ) {
   const webp = await comprimirParaWebp(arquivo);
-  const caminho = `${campanhaId}/${pasta}/${id}.${Date.now()}.webp`;
+  const caminho = `${mestreId}/${pasta}/${id}.${Date.now()}.webp`;
   const { error } = await supabase.storage.from(BUCKET_IMAGENS).upload(caminho, webp, { contentType: "image/webp" });
   if (error) throw error;
   const { data } = await supabase.storage.from(BUCKET_IMAGENS).createSignedUrl(caminho, VALIDADE_URL);

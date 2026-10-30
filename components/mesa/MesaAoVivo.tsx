@@ -1,6 +1,6 @@
 "use client";
 
-import { Minus, Plus, RotateCcw, Shield, Skull, TrendingDown } from "lucide-react";
+import { LogOut, Minus, Plus, RotateCcw, Shield, Skull, TrendingDown } from "lucide-react";
 import { cn } from "cn";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -12,6 +12,7 @@ import { corDoEstado, estadoDe, fundoDoEstado } from "@/lib/estado";
 import { LIMITE_CONGELADO, type Personagem, type Rolagem } from "@/lib/ficha-tipos";
 import { EntregarItem } from "@/components/mesa/EntregarItem";
 import { HistoricoAlteracoes } from "@/components/mesa/HistoricoAlteracoes";
+import { TrazerPersonagem } from "@/components/mesa/TrazerPersonagem";
 import type { Alteracao, CardPersonagem, DadosMesa } from "@/lib/mesa";
 import { createClient } from "@/lib/supabase/client";
 
@@ -21,7 +22,16 @@ function mesclarRolagem(lista: Rolagem[], rolagem: Rolagem) {
     .slice(0, 20);
 }
 
-function Card({ p, aoMudarVida }: { p: CardPersonagem; aoMudarVida: (vida: number) => void }) {
+function Card({
+  p,
+  aoMudarVida,
+  aoTirar,
+}: {
+  p: CardPersonagem;
+  aoMudarVida: (vida: number) => void;
+  aoTirar: () => void;
+}) {
+  const [confirmando, setConfirmando] = useState(false);
   const estado = estadoDe(p.vida);
   const porcentagem = Math.max(0, Math.min(100, (p.vida / p.vida_max) * 100));
 
@@ -75,8 +85,27 @@ function Card({ p, aoMudarVida }: { p: CardPersonagem; aoMudarVida: (vida: numbe
       </dl>
 
       <div className="flex items-center justify-between gap-2">
-        <span className="text-base text-muted-foreground">
+        <span className="flex items-center gap-1 text-base text-muted-foreground">
           {p.itens} {p.itens === 1 ? "item" : "itens"}
+          {/* tira só desta mesa; a ficha continua nas outras */}
+          {confirmando ? (
+            <Button
+              variant="destructive"
+              size="sm"
+              className="ml-2"
+              onClick={() => {
+                setConfirmando(false);
+                aoTirar();
+              }}
+              onBlur={() => setConfirmando(false)}
+            >
+              Tirar mesmo
+            </Button>
+          ) : (
+            <Button variant="ghost" size="sm" className="ml-2" onClick={() => setConfirmando(true)}>
+              <LogOut /> Tirar da mesa
+            </Button>
+          )}
         </span>
         <Link href={`/ficha/${p.id}`} className={buttonVariants({ variant: "outline", size: "lg" })}>
           Abrir e editar ficha
@@ -125,6 +154,8 @@ function FeedRolagens({ rolagens, nomes }: { rolagens: Rolagem[]; nomes: Map<str
 
 // Painel do mestre: fichas e rolagens chegam sozinhas pelo Realtime.
 export function MesaAoVivo({ campanhaId, inicial }: { campanhaId: string; inicial: DadosMesa }) {
+  // fichas podem vir de outras mesas, então o filtro é pelos ids das fichas desta mesa
+  const ids = inicial.personagens.map((p) => p.id).join(",");
   const supabase = useMemo(() => createClient(), []);
   const router = useRouter();
   const [personagens, setPersonagens] = useState(inicial.personagens);
@@ -137,14 +168,20 @@ export function MesaAoVivo({ campanhaId, inicial }: { campanhaId: string; inicia
     const pendentes = timers.current;
     const canal = supabase
       .channel(`mesa-${campanhaId}`)
+      // alguém entrou ou saiu da mesa: o servidor recarrega a lista
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "personagens", filter: `campanha_id=eq.${campanhaId}` },
+        { event: "*", schema: "public", table: "mesa_personagens", filter: `campanha_id=eq.${campanhaId}` },
+        () => router.refresh(),
+      )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "personagens", filter: `id=in.(${ids || "00000000-0000-0000-0000-000000000000"})` },
         (payload) => {
           const novo = payload.new as Personagem;
           const antigo = confirmados.current.find((p) => p.id === novo?.id);
-          // ficha nova, apagada ou retrato trocado: o servidor recarrega (nome do jogador, URL da foto)
-          if (payload.eventType !== "UPDATE" || !antigo || antigo.retrato_path !== novo.retrato_path) {
+          // retrato trocado: o servidor recarrega (URL nova da foto)
+          if (!antigo || antigo.retrato_path !== novo.retrato_path) {
             router.refresh();
             return;
           }
@@ -164,7 +201,7 @@ export function MesaAoVivo({ campanhaId, inicial }: { campanhaId: string; inicia
       )
       .on(
         "postgres_changes",
-        { event: "INSERT", schema: "public", table: "alteracoes", filter: `campanha_id=eq.${campanhaId}` },
+        { event: "INSERT", schema: "public", table: "alteracoes", filter: `personagem_id=in.(${ids || "00000000-0000-0000-0000-000000000000"})` },
         (payload) => {
           const nova = payload.new as Alteracao;
           setAlteracoes((lista) => [nova, ...lista].slice(0, 30));
@@ -183,7 +220,14 @@ export function MesaAoVivo({ campanhaId, inicial }: { campanhaId: string; inicia
       pendentes.forEach(clearTimeout);
       void supabase.removeChannel(canal);
     };
-  }, [supabase, campanhaId, router]);
+  }, [supabase, campanhaId, ids, router]);
+
+  async function tirarDaMesa(p: CardPersonagem) {
+    const { error } = await supabase.rpc("remover_da_mesa", { p_personagem: p.id, p_campanha: campanhaId });
+    if (error) return toast.error(error.message);
+    toast.success(`${p.nome} saiu desta mesa (a ficha continua nas outras)`);
+    router.refresh();
+  }
 
   function mudarVida(id: string, vida: number) {
     setPersonagens((lista) => lista.map((p) => (p.id === id ? { ...p, vida } : p)));
@@ -231,7 +275,7 @@ export function MesaAoVivo({ campanhaId, inicial }: { campanhaId: string; inicia
         {personagens.length ? (
           <ul className="grid gap-4 xl:grid-cols-2">
             {personagens.map((p) => (
-              <Card key={p.id} p={p} aoMudarVida={(vida) => mudarVida(p.id, vida)} />
+              <Card key={p.id} p={p} aoMudarVida={(vida) => mudarVida(p.id, vida)} aoTirar={() => tirarDaMesa(p)} />
             ))}
           </ul>
         ) : (
@@ -241,6 +285,7 @@ export function MesaAoVivo({ campanhaId, inicial }: { campanhaId: string; inicia
         )}
       </div>
       <aside className="flex flex-col gap-8">
+        <TrazerPersonagem campanhaId={campanhaId} disponiveis={inicial.disponiveis} />
         <EntregarItem personagens={personagens} itens={inicial.itens} />
         <FeedRolagens rolagens={rolagens} nomes={nomes} />
         <HistoricoAlteracoes alteracoes={alteracoes} nomes={nomes} autores={inicial.autores} />

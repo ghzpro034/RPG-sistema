@@ -9,7 +9,10 @@ async function MinhaFicha() {
   const sessao = await obterSessao();
   if (!sessao?.personagemId || !sessao.campanha) redirect("/");
 
-  const dados = await carregarFicha(sessao.personagemId, sessao.papel === "mestre");
+  const dados = await carregarFicha(sessao.personagemId, {
+    mestreId: sessao.papel === "mestre" ? sessao.userId : null,
+    campanhaAtual: sessao.campanha.id,
+  });
   if (!dados) redirect("/");
 
   return (

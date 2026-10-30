@@ -8,7 +8,9 @@ async function Painel() {
   const sessao = await obterSessao();
   if (sessao?.papel !== "mestre" || !sessao.campanha) redirect("/");
 
-  const dados = await carregarMesa(sessao.campanha.id);
+  const campanhaId = sessao.campanha.id;
+  const outrasMesas = sessao.mesas.filter((m) => m.papel === "mestre" && m.id !== campanhaId).map((m) => m.id);
+  const dados = await carregarMesa(campanhaId, sessao.userId, outrasMesas);
   // remonta quando muda quem está na mesa ou um retrato (o servidor manda os dados novos)
   const chave = dados.personagens.map((p) => `${p.id}:${p.retrato_path}`).join("|");
 

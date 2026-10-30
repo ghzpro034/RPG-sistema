@@ -57,10 +57,11 @@ export async function carregarGracas(supabase: SupabaseClient, personagemId: str
   return (data ?? []) as Graca[];
 }
 
-export async function carregarCatalogo(supabase: SupabaseClient, campanhaId: string) {
+// o catálogo é do mestre e vale em todas as mesas dele
+export async function carregarCatalogo(supabase: SupabaseClient, mestreId: string) {
   const [{ data: itens }, { data: cartas }] = await Promise.all([
-    supabase.from("itens").select(CAMPOS_ITEM).eq("campanha_id", campanhaId).order("nome"),
-    supabase.from("cartas").select(CAMPOS_CARTA).eq("campanha_id", campanhaId).order("tipo").order("nome"),
+    supabase.from("itens").select(CAMPOS_ITEM).eq("mestre_id", mestreId).order("nome"),
+    supabase.from("cartas").select(CAMPOS_CARTA).eq("mestre_id", mestreId).order("tipo").order("nome"),
   ]);
   const [itensComUrl, cartasComUrl] = await Promise.all([
     comUrl(supabase, (itens ?? []) as Omit<ItemCatalogo, "imagemUrl">[]),
