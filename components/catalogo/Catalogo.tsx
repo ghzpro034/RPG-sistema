@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { BUCKET_IMAGENS, type Carta, type ItemCatalogo, type Raridade, type TipoCarta } from "@/lib/ficha-tipos";
-import { enviarImagemCatalogo } from "@/lib/imagem";
+import { enviarImagemCatalogo, mensagemDeEnvio } from "@/lib/imagem";
 import { createClient } from "@/lib/supabase/client";
 
 const RARIDADES: { valor: Raridade; rotulo: string; cor: string }[] = [
@@ -144,7 +144,7 @@ export function Catalogo({
       toast.success(antigo ? "Salvo" : edicao.tipo === "item" ? "Item criado" : "Carta criada");
       setEdicao(null);
     } catch (erro) {
-      toast.error(erro instanceof Error ? erro.message : "Não foi possível salvar");
+      toast.error(mensagemDeEnvio(erro));
     } finally {
       setSalvando(false);
     }

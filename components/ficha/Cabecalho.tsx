@@ -6,11 +6,11 @@ import { toast } from "sonner";
 import { TextoEditavel } from "@/components/ficha/campos";
 import { useFicha } from "@/components/ficha/contexto";
 import { BUCKET_IMAGENS, VALIDADE_URL, type Carta } from "@/lib/ficha-tipos";
-import { comprimirParaWebp } from "@/lib/imagem";
+import { comprimirParaWebp, mensagemDeEnvio } from "@/lib/imagem";
 import { createClient } from "@/lib/supabase/client";
 
 export function Cabecalho({ retratoInicial, cartas }: { retratoInicial: string | null; cartas: Carta[] }) {
-  const { personagem: p, editando, salvar } = useFicha();
+  const { personagem: p, editando, salvar, souMestre } = useFicha();
   const supabase = useMemo(() => createClient(), []);
   const [retratoUrl, setRetratoUrl] = useState(retratoInicial);
   const [enviando, setEnviando] = useState(false);
@@ -38,7 +38,7 @@ export function Cabecalho({ retratoInicial, cartas }: { retratoInicial: string |
       if (antigo) await supabase.storage.from(BUCKET_IMAGENS).remove([antigo]);
       toast.success("Retrato atualizado");
     } catch (erro) {
-      toast.error(erro instanceof Error ? erro.message : "Não foi possível enviar a foto");
+      toast.error(mensagemDeEnvio(erro));
     } finally {
       setEnviando(false);
     }
@@ -79,7 +79,8 @@ export function Cabecalho({ retratoInicial, cartas }: { retratoInicial: string |
           <span className="relative font-heading text-xl font-bold">{p.defesa}</span>
         </div>
 
-        {editando && (
+        {/* só o mestre troca imagens */}
+        {editando && souMestre && (
           <>
             <button
               type="button"

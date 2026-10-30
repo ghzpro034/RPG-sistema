@@ -28,3 +28,11 @@ export async function enviarImagemCatalogo(
   const { data } = await supabase.storage.from(BUCKET_IMAGENS).createSignedUrl(caminho, VALIDADE_URL);
   return { caminho, url: data?.signedUrl ?? null };
 }
+
+// Traduz o erro do envio; o "row-level security" do Supabase vira algo que o mestre entende.
+export function mensagemDeEnvio(erro: unknown) {
+  const mensagem = erro instanceof Error ? erro.message : String(erro ?? "");
+  if (/row-level security/i.test(mensagem)) return "Sem permissão para enviar esta imagem";
+  if (/payload too large|exceeded/i.test(mensagem)) return "Imagem grande demais";
+  return mensagem || "Não foi possível enviar a imagem";
+}
