@@ -2,7 +2,7 @@
 
 import { ImageIcon, Pencil, Plus, Trash2 } from "lucide-react";
 import { cn } from "cn";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { BUCKET_IMAGENS, type Carta, type ItemCatalogo, type Raridade, type TipoCarta } from "@/lib/ficha-tipos";
-import { enviarImagemCatalogo, mensagemDeEnvio } from "@/lib/imagem";
+import { apagarImagensSemUso, enviarImagemCatalogo, mensagemDeEnvio } from "@/lib/imagem";
 import { createClient } from "@/lib/supabase/client";
 
 const RARIDADES: { valor: Raridade; rotulo: string; cor: string }[] = [
@@ -88,6 +88,10 @@ export function Catalogo({
   const [edicao, setEdicao] = useState<Edicao | null>(null);
   const [imagem, setImagem] = useState<File | null>(null);
   const [salvando, setSalvando] = useState(false);
+
+  useEffect(() => {
+    apagarImagensSemUso(supabase).catch(() => {});
+  }, [supabase]);
   const [apagando, setApagando] = useState<string | null>(null);
 
   function abrir(e: Edicao) {

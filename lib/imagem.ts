@@ -29,10 +29,19 @@ export async function enviarImagemCatalogo(
   return { caminho, url: data?.signedUrl ?? null };
 }
 
+// Apaga do Storage as imagens que ficaram sem uso (retrato trocado, item apagado, envio que falhou).
+// O banco escolhe quais; só o mestre recebe alguma. Se falhar, tenta de novo na próxima vez.
+export async function apagarImagensSemUso(supabase: SupabaseClient) {
+  const { data } = await supabase.rpc("imagens_para_apagar");
+  const caminhos = (data ?? []) as string[];
+  if (caminhos.length) await supabase.storage.from(BUCKET_IMAGENS).remove(caminhos);
+}
+
 // Traduz o erro do envio; o "row-level security" do Supabase vira algo que o mestre entende.
 export function mensagemDeEnvio(erro: unknown) {
   const mensagem = erro instanceof Error ? erro.message : String(erro ?? "");
   if (/row-level security/i.test(mensagem)) return "Sem permissão para enviar esta imagem";
   if (/payload too large|exceeded/i.test(mensagem)) return "Imagem grande demais";
+  if (/mime type/i.test(mensagem)) return "Formato de imagem não aceito";
   return mensagem || "Não foi possível enviar a imagem";
 }

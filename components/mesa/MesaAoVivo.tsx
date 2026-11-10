@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { Resultado } from "@/components/ficha/rolador";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { corDoEstado, estadoDe, fundoDoEstado } from "@/lib/estado";
+import { apagarImagensSemUso } from "@/lib/imagem";
 import { LIMITE_CONGELADO, type Personagem, type Rolagem } from "@/lib/ficha-tipos";
 import { EntregarItem } from "@/components/mesa/EntregarItem";
 import { HistoricoAlteracoes } from "@/components/mesa/HistoricoAlteracoes";
@@ -173,6 +174,11 @@ export function MesaAoVivo({ campanhaId, inicial }: { campanhaId: string; inicia
   const [alteracoes, setAlteracoes] = useState(inicial.alteracoes);
   const confirmados = useRef(inicial.personagens);
   const timers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
+
+  // a Mesa é a página que o mestre mais abre: aproveita para limpar as imagens que sobraram
+  useEffect(() => {
+    apagarImagensSemUso(supabase).catch(() => {});
+  }, [supabase]);
 
   useEffect(() => {
     const pendentes = timers.current;
