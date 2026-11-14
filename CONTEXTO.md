@@ -4,7 +4,9 @@
 > atualize no mesmo commit de qualquer mudança que altere o que está escrito aqui (nova função,
 > migration, decisão de regra, pendência resolvida ou nova).
 >
-> Última atualização: 2026-11-09
+> Última atualização: 2026-11-11
+>
+> Visão completa (histórico, decisões com o porquê, banco, desempenho): [`RELATORIO.md`](RELATORIO.md).
 
 ## O que é
 
@@ -131,6 +133,9 @@ ao abrir a Mesa como mestre).
 - Instalar o PWA num Android e num iPhone de verdade.
 
 **Melhorias opcionais**
+- Servidores da Vercel em São Paulo (`vercel.json` com `"regions": ["gru1"]`): hoje as páginas logadas rodam em
+  Washington (`iad1`) e o banco está muito provavelmente em São Paulo, o que soma ~0,5 s ao abrir a ficha e a Mesa.
+  O usuário adiou em 09/11.
 - Imagens ficarem em cache no celular (hoje as URLs assinadas mudam a cada abertura e tudo é baixado de novo).
 - Animação do dado (respeitando `prefers-reduced-motion`).
 - Estados vazios, de carregamento e de erro mais caprichados.
