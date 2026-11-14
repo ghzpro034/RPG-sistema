@@ -5,6 +5,7 @@ import { criarCampanha, entrarCampanha, trocarMesa } from "@/app/actions";
 import { Campo } from "@/components/Campo";
 import { Formulario } from "@/components/Formulario";
 import { obterSessao } from "@/lib/sessao";
+import { EsqueletoLista, Vazio } from "@/components/Estados";
 
 // Todas as mesas do usuário: trocar de mesa, criar outra (mestre) ou entrar com um código.
 async function Mesas() {
@@ -54,7 +55,7 @@ async function Mesas() {
             })}
           </ul>
         ) : (
-          <p className="text-lg text-muted-foreground">Você ainda não está em nenhuma mesa.</p>
+          <Vazio icone={Users} titulo="Nenhuma mesa ainda">Entre com o código que o mestre passou, ou crie uma mesa nova.</Vazio>
         )}
       </section>
 
@@ -91,7 +92,7 @@ export default function MesasPage() {
   return (
     <div className="flex flex-col gap-6">
       <h1 className="text-3xl font-bold tracking-wide uppercase">Mesas</h1>
-      <Suspense fallback={<p className="text-xl text-muted-foreground">Carregando as mesas…</p>}>
+      <Suspense fallback={<EsqueletoLista rotulo="Carregando as mesas…" />}>
         <Mesas />
       </Suspense>
     </div>

@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { destinoDe, obterSessao } from "@/lib/sessao";
+import { CarregandoTela } from "@/components/Estados";
 
 async function Redirecionar() {
   redirect(destinoDe(await obterSessao()));
@@ -9,7 +10,7 @@ async function Redirecionar() {
 
 export default function Home() {
   return (
-    <Suspense fallback={<p className="m-auto text-xl text-muted-foreground">Carregando…</p>}>
+    <Suspense fallback={<CarregandoTela />}>
       <Redirecionar />
     </Suspense>
   );

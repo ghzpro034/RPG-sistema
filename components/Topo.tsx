@@ -1,7 +1,7 @@
 import { ChevronsUpDown } from "lucide-react";
 import Link from "next/link";
-import { sair } from "@/app/actions";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { BotaoSair } from "@/components/BotaoSair";
+import { buttonVariants } from "@/components/ui/button";
 import type { Papel } from "@/lib/sessao";
 
 // Barra do topo: mesa aberta (toque para trocar), atalhos do mestre e sair.
@@ -28,11 +28,7 @@ export function Topo({ mesa, papel, nome }: { mesa: string | null; papel: Papel 
         </nav>
       )}
       <span className="hidden text-base text-muted-foreground lg:inline">{nome}</span>
-      <form action={sair}>
-        <Button type="submit" variant="ghost" size="sm" className="h-10 sm:h-8">
-          Sair
-        </Button>
-      </form>
+      <BotaoSair />
     </div>
   );
 }

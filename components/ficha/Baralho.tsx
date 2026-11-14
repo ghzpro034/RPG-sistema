@@ -1,12 +1,13 @@
 "use client";
 
-import { Plus, X } from "lucide-react";
+import { Layers, Plus, X } from "lucide-react";
 import { cn } from "cn";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import type { Carta, TipoCarta } from "@/lib/ficha-tipos";
 import { createClient } from "@/lib/supabase/client";
+import { Vazio } from "@/components/Estados";
 
 const ESTILO: Record<TipoCarta, { rotulo: string; moldura: string; titulo: string; texto: string; marcador: string }> = {
   arquetipo: { rotulo: "Arquétipo", moldura: "border-white/70", titulo: "text-ouro", texto: "text-ouro/90", marcador: "marker:text-ouro" },
@@ -152,7 +153,7 @@ export function Baralho({
           })}
         </ul>
       ) : (
-        <p className="py-6 text-center text-lg text-muted-foreground">{vazio}</p>
+        <Vazio icone={Layers} titulo="Sem cartas">{vazio}</Vazio>
       )}
     </div>
   );

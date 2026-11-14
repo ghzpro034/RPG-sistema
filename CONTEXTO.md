@@ -4,7 +4,7 @@
 > atualize no mesmo commit de qualquer mudança que altere o que está escrito aqui (nova função,
 > migration, decisão de regra, pendência resolvida ou nova).
 >
-> Última atualização: 2026-11-11
+> Última atualização: 2026-11-14
 >
 > Visão completa (histórico, decisões com o porquê, banco, desempenho): [`RELATORIO.md`](RELATORIO.md).
 
@@ -24,7 +24,7 @@ variável de banco `grimorio.rpc` e as configurações em `.claude/launch.json`.
 |---|---|
 | Site no ar | https://rpg-sistema-three.vercel.app |
 | Repositório | https://github.com/ghzpro034/RPG-sistema (branch `main`) |
-| Deploy | Vercel, projeto `projetos-fd57/rpg-sistema` — cada push no `main` publica |
+| Deploy | Vercel, projeto `projetos-fd57/rpg-sistema` — cada push no `main` publica. As funções rodam em São Paulo (`gru1`, no `vercel.json`), perto do banco |
 | Banco, login, imagens, tempo real | Supabase (Postgres + RLS, Auth e-mail/senha, Storage, Realtime) |
 | Keep-alive do Supabase | `.github/workflows/keepalive.yml`, a cada 3 dias (secrets `SUPABASE_URL` e `SUPABASE_PUBLISHABLE_KEY`) |
 | Variáveis locais | `.env.local` (fora do git); modelo em `.env.example` |
@@ -53,12 +53,16 @@ A secret key e a senha do Postgres não são usadas pelo app.
   `Conhecimento`, `EnganarMorte`, `MemoriasGracas`, `Travas`, `Companheiros`), `contexto.tsx`
   (salvar/sincronizar a ficha) e `rolador.tsx` (D100, Reforçar/Refazer, últimas rolagens).
 - `components/mesa/` — `MesaAoVivo`, `EntregarItem`, `HistoricoAlteracoes`, `TrazerPersonagem`, `Memorial`.
+- `components/Estados.tsx` — esqueletos de carregamento (`EsqueletoFicha`, `EsqueletoMesa`, `EsqueletoLista`,
+  `CarregandoTela`), `Vazio` (lista vazia) e `NaoEncontrado`. `TelaDeErro.tsx` (usada pelos `error.tsx`),
+  `SemInternet.tsx` (faixa vermelha quando o aparelho fica offline) e `BotaoSair.tsx`.
+  Novas telas devem usar esses componentes em vez de texto solto.
 - `lib/` — `sessao.ts` (usuário, mesa aberta, papel), `ficha.ts`, `mesa.ts`, `conteudo.ts`
   (cartas/inventário/graças/catálogo + URLs assinadas), `imagem.ts` (compressão, envio e limpeza),
   `ficha-tipos.ts` (tipos e constantes), `estado.ts` (Estável/Ferido/Instável), `supabase/` (clientes;
   `nomeCanal()` gera nomes únicos de canal Realtime).
 - `supabase/migrations/` — esquema em ordem (tabela abaixo). `supabase/diagnosticos/imagens.sql` é só leitura.
-- `public/` — `sw.js` (service worker que só mostra `offline.html`), `icones/`.
+- `public/` — `sw.js` (service worker: mostra `offline.html` sem internet e guarda as imagens do RPG), `icones/`.
 - `scripts/gerar-icones.mjs` — gera os ícones do PWA a partir de `scripts/icone-origem.svg`.
 
 ## Regras do jogo (confirmadas pelo usuário)
@@ -85,6 +89,9 @@ A secret key e a senha do Postgres não são usadas pelo app.
   leitura e pode voltar (`reviver_personagem`). O jogador sai das mesas e, para voltar, cria outro personagem.
 - **Imagens:** só o mestre envia, troca e apaga (retratos, itens, cartas); jogadores só veem. Tudo vira WebP
   de ~150 KB / 800 px no navegador. Bucket privado `imagens`, URLs assinadas de 7 dias.
+  O `sw.js` guarda cada imagem no aparelho pelo caminho, sem o token (até 300; cada envio tem nome novo,
+  então nunca fica uma versão velha). O botão Sair apaga esse cache. O CSP do `sw.js` (`next.config.ts`)
+  libera `connect-src` para a URL do Supabase.
   Nas políticas do Storage, leia o caminho com `string_to_array` (como `retrato_personagem()`), não com
   `storage.foldername()` dentro de funções — isso já causou erro de RLS.
 - **Gastar PE** só por RPC (`security definer` + `set_config('grimorio.rpc','on',true)`), por causa do trigger de travas.
@@ -113,12 +120,16 @@ O usuário roda cada migration no **SQL Editor do Supabase** antes do push do c�
 **No ar:** fases 0 a 4 do plano, visual da ficha do Canva, colegas de mesa, várias mesas,
 morte e memorial, só o mestre envia imagens, mestre remove itens dos jogadores, layout de celular revisado, PWA,
 limite do bucket (só WebP até 1 MB) e limpeza automática das imagens sem uso (`apagarImagensSemUso()` em
-`lib/imagem.ts`, roda quando o mestre abre a Mesa ou o Catálogo e só pega imagens com mais de 1 hora).
+`lib/imagem.ts`, roda quando o mestre abre a Mesa ou o Catálogo e só pega imagens com mais de 1 hora),
+funções da Vercel em São Paulo, imagens guardadas no celular pelo service worker, e telas de carregamento
+(esqueletos), erro, página não encontrada, listas vazias e aviso de sem internet.
 
 **Em andamento:** nada.
 
-**Ainda não testado logado:** a limpeza de imagens (confira se uma imagem trocada some do Storage depois de 1 hora,
-ao abrir a Mesa como mestre).
+**Ainda não testado logado:**
+- A limpeza de imagens (confira se uma imagem trocada some do Storage depois de 1 hora, ao abrir a Mesa como mestre).
+- As imagens guardadas no celular (na segunda abertura da ficha, as imagens aparecem na hora, sem baixar de novo).
+- A ficha e a Mesa mais rápidas com as funções em São Paulo (medir na aba Rede do navegador).
 
 ## Pendências
 
@@ -133,12 +144,8 @@ ao abrir a Mesa como mestre).
 - Instalar o PWA num Android e num iPhone de verdade.
 
 **Melhorias opcionais**
-- Servidores da Vercel em São Paulo (`vercel.json` com `"regions": ["gru1"]`): hoje as páginas logadas rodam em
-  Washington (`iad1`) e o banco está muito provavelmente em São Paulo, o que soma ~0,5 s ao abrir a ficha e a Mesa.
-  O usuário adiou em 09/11.
-- Imagens ficarem em cache no celular (hoje as URLs assinadas mudam a cada abertura e tudo é baixado de novo).
 - Animação do dado (respeitando `prefers-reduced-motion`).
-- Estados vazios, de carregamento e de erro mais caprichados.
+- Testes automatizados dos fluxos principais (login, ficha, D100, mesa).
 
 **Técnicas, sem pressa**
 - Tipos gerados do banco (`lib/tipos.ts`) — precisa do token do Supabase CLI.

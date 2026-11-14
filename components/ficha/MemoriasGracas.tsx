@@ -1,6 +1,6 @@
 "use client";
 
-import { Pencil } from "lucide-react";
+import { Gem, Pencil } from "lucide-react";
 import { cn } from "cn";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import type { FormaGraca, Graca, ItemInventario, Raridade } from "@/lib/ficha-tipos";
 import { createClient } from "@/lib/supabase/client";
+import { Vazio } from "@/components/Estados";
 
 const ROMANOS = ["I", "II", "III", "IV", "V"];
 
@@ -209,7 +210,7 @@ export function MemoriasGracas({
             ))}
           </ul>
         ) : (
-          <p className="text-lg text-muted-foreground">Nenhum item com memórias no inventário.</p>
+          <Vazio icone={Gem} titulo="Sem memórias">Quando o mestre entregar um item com memórias, elas aparecem aqui.</Vazio>
         )}
         {souMestre && comMemorias.length > 0 && (
           <p className="text-base text-muted-foreground">Toque na próxima memória para desbloquear.</p>

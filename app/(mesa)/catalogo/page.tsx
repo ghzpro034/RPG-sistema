@@ -4,6 +4,7 @@ import { Catalogo } from "@/components/catalogo/Catalogo";
 import { carregarCatalogo } from "@/lib/conteudo";
 import { obterSessao } from "@/lib/sessao";
 import { createClient } from "@/lib/supabase/server";
+import { EsqueletoLista } from "@/components/Estados";
 
 // Mestre: cria e edita os itens e as cartas (um catálogo só, para todas as mesas dele).
 async function ConteudoCatalogo() {
@@ -19,7 +20,7 @@ export default function CatalogoPage() {
   return (
     <div className="flex flex-col gap-6">
       <h1 className="text-3xl font-bold tracking-wide uppercase">Catálogo</h1>
-      <Suspense fallback={<p className="text-xl text-muted-foreground">Carregando o catálogo…</p>}>
+      <Suspense fallback={<EsqueletoLista rotulo="Carregando o catálogo…" />}>
         <ConteudoCatalogo />
       </Suspense>
     </div>

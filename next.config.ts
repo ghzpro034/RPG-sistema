@@ -28,7 +28,11 @@ const nextConfig: NextConfig = {
         headers: [
           { key: "Content-Type", value: "application/javascript; charset=utf-8" },
           { key: "Cache-Control", value: "no-cache, no-store, must-revalidate" },
-          { key: "Content-Security-Policy", value: "default-src 'self'; script-src 'self'" },
+          // connect-src libera o service worker a buscar as imagens no Storage do Supabase
+          {
+            key: "Content-Security-Policy",
+            value: `default-src 'self'; script-src 'self'; connect-src 'self' ${process.env.NEXT_PUBLIC_SUPABASE_URL ?? "https://*.supabase.co"}`,
+          },
         ],
       },
     ];

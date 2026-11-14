@@ -1,6 +1,6 @@
 "use client";
 
-import { ImageIcon, Pencil, Plus, Trash2 } from "lucide-react";
+import { ImageIcon, Layers, Package, Pencil, Plus, Trash2 } from "lucide-react";
 import { cn } from "cn";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { BUCKET_IMAGENS, type Carta, type ItemCatalogo, type Raridade, type TipoCarta } from "@/lib/ficha-tipos";
 import { apagarImagensSemUso, enviarImagemCatalogo, mensagemDeEnvio } from "@/lib/imagem";
 import { createClient } from "@/lib/supabase/client";
+import { Vazio } from "@/components/Estados";
 
 const RARIDADES: { valor: Raridade; rotulo: string; cor: string }[] = [
   { valor: "comum", rotulo: "Comum", cor: "text-comum" },
@@ -212,7 +213,7 @@ export function Catalogo({
               })}
             </ul>
           ) : (
-            <p className="text-lg text-muted-foreground">Nenhum item no catálogo ainda.</p>
+            <Vazio icone={Package} titulo="Nenhum item ainda">Crie o primeiro item para poder entregar aos jogadores.</Vazio>
           )}
         </TabsContent>
 
@@ -241,7 +242,7 @@ export function Catalogo({
               })}
             </ul>
           ) : (
-            <p className="text-lg text-muted-foreground">Nenhuma carta no catálogo ainda.</p>
+            <Vazio icone={Layers} titulo="Nenhuma carta ainda">Crie arquétipos, traumas, habilidades e revoltas para dar aos jogadores.</Vazio>
           )}
         </TabsContent>
       </Tabs>

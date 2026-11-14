@@ -5,6 +5,7 @@ import { Suspense } from "react";
 import { Ficha } from "@/components/ficha/Ficha";
 import { carregarFicha } from "@/lib/ficha";
 import { obterSessao } from "@/lib/sessao";
+import { EsqueletoFicha } from "@/components/Estados";
 
 // Mestre: abre e edita a ficha de qualquer personagem da mesa.
 async function FichaDoMestre({ params }: { params: Promise<{ id: string }> }) {
@@ -24,7 +25,7 @@ export default function FichaDoMestrePage({ params }: { params: Promise<{ id: st
       <Link href="/mesa" className="flex items-center gap-1.5 self-start text-lg text-muted-foreground hover:text-foreground">
         <ArrowLeft className="size-4" /> Voltar à mesa
       </Link>
-      <Suspense fallback={<p className="text-xl text-muted-foreground">Carregando a ficha…</p>}>
+      <Suspense fallback={<EsqueletoFicha />}>
         <FichaDoMestre params={params} />
       </Suspense>
     </div>

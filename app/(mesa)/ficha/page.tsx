@@ -5,6 +5,7 @@ import { Companheiros } from "@/components/ficha/Companheiros";
 import { Ficha } from "@/components/ficha/Ficha";
 import { carregarFicha } from "@/lib/ficha";
 import { obterSessao } from "@/lib/sessao";
+import { EsqueletoFicha } from "@/components/Estados";
 
 async function MinhaFicha() {
   const sessao = await obterSessao();
@@ -30,7 +31,7 @@ async function MinhaFicha() {
 
 export default function FichaPage() {
   return (
-    <Suspense fallback={<p className="text-xl text-muted-foreground">Carregando a ficha…</p>}>
+    <Suspense fallback={<EsqueletoFicha />}>
       <MinhaFicha />
     </Suspense>
   );

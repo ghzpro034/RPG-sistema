@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Cinzel, Cormorant_Garamond } from "next/font/google";
 import { RegistrarServiceWorker } from "@/components/RegistrarServiceWorker";
+import { SemInternet } from "@/components/SemInternet";
 import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
@@ -37,6 +38,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${cinzel.variable} ${cormorant.variable} dark h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
+        <SemInternet />
         {children}
         <Toaster theme="dark" richColors />
         <RegistrarServiceWorker />

@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { MesaAoVivo } from "@/components/mesa/MesaAoVivo";
 import { carregarMesa } from "@/lib/mesa";
 import { obterSessao } from "@/lib/sessao";
+import { EsqueletoMesa } from "@/components/Estados";
 
 async function Painel() {
   const sessao = await obterSessao();
@@ -30,7 +31,7 @@ async function Painel() {
 
 export default function MesaPage() {
   return (
-    <Suspense fallback={<p className="text-xl text-muted-foreground">Carregando a mesa…</p>}>
+    <Suspense fallback={<EsqueletoMesa />}>
       <Painel />
     </Suspense>
   );

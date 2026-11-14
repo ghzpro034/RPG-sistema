@@ -1,6 +1,6 @@
 "use client";
 
-import { LogOut, Minus, Plus, RotateCcw, Shield, Skull, TrendingDown } from "lucide-react";
+import { Dices, LogOut, Minus, Plus, RotateCcw, Shield, Skull, TrendingDown } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Memorial } from "@/components/mesa/Memorial";
@@ -19,6 +19,7 @@ import { HistoricoAlteracoes } from "@/components/mesa/HistoricoAlteracoes";
 import { TrazerPersonagem } from "@/components/mesa/TrazerPersonagem";
 import type { Alteracao, CardPersonagem, DadosMesa } from "@/lib/mesa";
 import { createClient, nomeCanal } from "@/lib/supabase/client";
+import { Vazio } from "@/components/Estados";
 
 function mesclarRolagem(lista: Rolagem[], rolagem: Rolagem) {
   return [rolagem, ...lista.filter((r) => r.id !== rolagem.id)]
@@ -157,7 +158,7 @@ function FeedRolagens({ rolagens, nomes }: { rolagens: Rolagem[]; nomes: Map<str
           ))}
         </ul>
       ) : (
-        <p className="text-base text-muted-foreground">Nenhuma rolagem ainda nesta mesa.</p>
+        <Vazio compacto icone={Dices} titulo="Nenhuma rolagem ainda">As rolagens dos jogadores aparecem aqui na hora.</Vazio>
       )}
     </section>
   );
@@ -316,9 +317,9 @@ export function MesaAoVivo({ campanhaId, inicial }: { campanhaId: string; inicia
             ))}
           </ul>
         ) : (
-          <p className="flex items-center gap-2 text-lg text-muted-foreground">
-            <Shield className="size-5" /> Nenhuma ficha ainda. Passe o código de convite para os jogadores.
-          </p>
+          <Vazio icone={Shield} titulo="Nenhuma ficha ainda">
+            Passe o código de convite para os jogadores. As fichas aparecem aqui assim que eles entrarem.
+          </Vazio>
         )}
         <Memorial falecidos={inicial.memorial} />
       </div>

@@ -1,5 +1,6 @@
 import { History } from "lucide-react";
 import type { Alteracao } from "@/lib/mesa";
+import { Vazio } from "@/components/Estados";
 
 // nomes legíveis dos campos da ficha; o que não está aqui não aparece no histórico
 const CAMPOS: Record<string, string> = {
@@ -74,7 +75,7 @@ export function HistoricoAlteracoes({
           ))}
         </ul>
       ) : (
-        <p className="text-base text-muted-foreground">Nenhuma alteração ainda.</p>
+        <Vazio compacto icone={History} titulo="Nada alterado ainda" />
       )}
     </section>
   );

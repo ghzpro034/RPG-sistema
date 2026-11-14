@@ -5,6 +5,7 @@ import { Campo } from "@/components/Campo";
 import { Formulario } from "@/components/Formulario";
 import { Moldura } from "@/components/Moldura";
 import { destinoDe, obterSessao } from "@/lib/sessao";
+import { CarregandoTela } from "@/components/Estados";
 
 async function Conteudo() {
   const sessao = await obterSessao();
@@ -59,7 +60,7 @@ async function Conteudo() {
 
 export default function ComecarPage() {
   return (
-    <Suspense fallback={<p className="m-auto text-xl text-muted-foreground">Carregando…</p>}>
+    <Suspense fallback={<CarregandoTela />}>
       <Conteudo />
     </Suspense>
   );
