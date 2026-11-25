@@ -34,7 +34,7 @@ A secret key e a senha do Postgres não são usadas pelo app.
 
 ## Stack e convenções
 
-- **Next.js 16.4** (App Router, Cache Components, `partialPrefetching`). Versão com mudanças grandes: leia
+- **Next.js 16.4.6** (App Router, Cache Components, `partialPrefetching`). Versão com mudanças grandes: leia
   `node_modules/next/dist/docs/` antes de usar uma API (ver `AGENTS.md`). `proxy.ts` substitui o middleware;
   `params`/`searchParams` são Promises; páginas que leem cookies ficam dentro de `<Suspense>`.
 - **React 19** com React Compiler (evite `useMemo` desnecessário; hooks nunca depois de `return` condicional).
@@ -136,6 +136,9 @@ funções da Vercel em São Paulo, imagens guardadas no celular pelo service wor
 "sem permissão" e isso não contou como uso. O batimento precisa ser uma operação que dá certo (hoje, uma escrita).
 `CRON_SECRET` já está criada na Vercel (Production).
 
+**Lição (24/11):** com a 16.4.3, o Next.js passou a parar o build com `SecurityFatalError` (avisos de segurança) e o
+deploy da Vercel falhou. Atualizado para 16.4.6. Se um deploy falhar do nada, rode `npm run build` local e procure esse erro.
+
 **Ainda não testado logado:**
 - A limpeza de imagens (confira se uma imagem trocada some do Storage depois de 1 hora, ao abrir a Mesa como mestre).
 - As imagens guardadas no celular (na segunda abertura da ficha, as imagens aparecem na hora, sem baixar de novo).
@@ -168,8 +171,6 @@ funções da Vercel em São Paulo, imagens guardadas no celular pelo service wor
 - Testes automatizados dos fluxos principais (login, ficha, D100, mesa).
 
 **Técnicas, sem pressa**
-- Atualizar o Next.js de 16.4.3 para 16.4.6: há 5 avisos de segurança moderados (cache de `use cache`, otimização
-  de imagem, rotas Edge). O build local para com `SecurityFatalError` na primeira vez e passa ao repetir.
 - Tipos gerados do banco (`lib/tipos.ts`) — precisa do token do Supabase CLI.
 - "Esqueci a senha" (hoje o mestre redefine pelo painel do Supabase).
 - Remoção de item ao vivo: o jogador com a ficha aberta só vê ao voltar para a aba ou recarregar.
