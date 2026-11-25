@@ -4,7 +4,7 @@
 > atualize no mesmo commit de qualquer mudança que altere o que está escrito aqui (nova função,
 > migration, decisão de regra, pendência resolvida ou nova).
 >
-> Última atualização: 2026-11-24
+> Última atualização: 2026-11-25
 >
 > Visão completa (histórico, decisões com o porquê, banco, desempenho): [`RELATORIO.md`](RELATORIO.md).
 
@@ -59,7 +59,7 @@ A secret key e a senha do Postgres não são usadas pelo app.
   Novas telas devem usar esses componentes em vez de texto solto.
 - `lib/` — `sessao.ts` (usuário, mesa aberta, papel), `ficha.ts`, `mesa.ts`, `conteudo.ts`
   (cartas/inventário/graças/catálogo + URLs assinadas), `imagem.ts` (compressão, envio e limpeza),
-  `ficha-tipos.ts` (tipos e constantes), `estado.ts` (Estável/Ferido/Instável), `supabase/` (clientes;
+  `ficha-tipos.ts` (tipos e constantes), `estado.ts` (Estável/Ferido/Instável/Morrendo e o efeito de cada um), `supabase/` (clientes;
   `nomeCanal()` gera nomes únicos de canal Realtime).
 - `supabase/migrations/` — esquema em ordem (tabela abaixo). `supabase/diagnosticos/imagens.sql` é só leitura.
 - `public/` — `sw.js` (service worker: mostra `offline.html` sem internet e guarda as imagens do RPG), `icones/`.
@@ -69,19 +69,26 @@ A secret key e a senha do Postgres não são usadas pelo app.
 
 > **O sistema mudou (18/11/2026)** e o **Compêndio do Sistema é a fonte oficial**: quando uma ficha antiga disser
 > outra coisa, vale o Compêndio. As regras completas e atuais estão em [`docs/SISTEMA.md`](docs/SISTEMA.md),
-> resumidas do Compêndio do Sistema e das fichas novas. O app ainda segue as regras antigas abaixo; a adaptação
-> está planejada em fases (ver Pendências).
+> resumidas do Compêndio do Sistema e das fichas novas. A ficha já segue o sistema novo (Fase A); cartas, inventário
+> e combate ainda seguem o antigo (Fases B a D, ver Pendências).
 
-- **D100:** sucesso quando `resultado <= atributo` (empate é sucesso).
-- **Reforçar (−1 PE):** declarado antes de rolar; rola 2 dados e vale o menor.
-- **Refazer (−2 PE):** sem limite enquanto houver PE; repete no mesmo modo (reforçada rola 2 de novo, cobrando só os 2 PE).
-- **Estados da vida:** Estável, Ferido (< 10), Instável (< 5).
-- **Congelamento:** passou de 10, o personagem congela no frio.
+- **Características e especializações:** Vigor (Força, Movimento, Furtividade, Resistência), Mental (Vasculhar,
+  Percepção, Conhecimento, Atirar, Criar), Social (Lábia, Intimidação, Adestramento, Sorte, Presença). O valor de
+  Vigor/Mental/Social fica em `personagens.vigor|mental|social` e **o mestre digita** (ainda não há fórmula).
+- **D100 (`rolar_d100`):** na característica; sucesso quando `resultado <= valor` (empate é sucesso, decisão do usuário).
+- **D20 (`rolar_d20`):** na especialização; o app soma `atributos.bonus` e mostra o total; **o mestre julga** (sucesso fica nulo).
+- **Reforçar (−1 PE):** declarado antes de rolar; 2 dados (D100 vale o menor, D20 vale o maior).
+- **Refazer (−2 PE):** sem limite enquanto houver PE; repete no mesmo dado e modo.
+- **Estados da vida (`lib/estado.ts`):** Morrendo em 0; Instável abaixo de `limiar_instavel` (de cada ficha); Ferido
+  abaixo de 50% da vida máxima; senão Estável.
+- **Congelamento:** passou de `limite_congelado` (de cada ficha), o personagem congela no frio.
+- **Sinergia, Proteção e raça:** Sinergia é um contador da ficha; Proteção é a coluna `defesa`; raça (Errante, Pálido,
+  Sanguíneo) e os limites só o mestre muda.
 - **Dentes:** moeda principal do RPG.
 - **Inventário:** 4 espaços. Raridades: Comum (branco), Incomum (azul), Único (roxo).
 - **Conhecimento:** lista fixa de 16 áreas; as dominantes ficam em destaque.
 - **Enganar a morte:** vem de carta (ex.: Agraciado); fica riscado depois de usado.
-- **Em aberto:** o que medem as estrelas ★☆☆☆ dos itens.
+- **Em aberto:** o que medem as estrelas ★☆☆☆ dos itens (provavelmente o nível de memória da arma; ver `docs/SISTEMA.md`).
 
 ## Decisões de funcionamento
 
@@ -120,6 +127,7 @@ O usuário roda cada migration no **SQL Editor do Supabase** antes do push do c�
 | `20261030090000_retratos_passo_a_passo` | Correção das regras de retrato | sim |
 | `20261030100000_limpeza_imagens` | Bucket aceita só WebP até 1 MB; fila e limpeza de imagens sem uso | sim |
 | `20261124000000_manter_vivo` | Tabela `batimentos` e RPC `manter_vivo` (aberta a anon) para o Supabase não pausar | sim |
+| `20261125000000_sistema_fase_a` | Sistema novo na ficha: Vigor, Criar, características, bônus de D20, `rolar_d100` na característica, `rolar_d20`, limiares por ficha, Sinergia, raça | sim |
 
 ## Estado atual
 
@@ -128,9 +136,12 @@ morte e memorial, só o mestre envia imagens, mestre remove itens dos jogadores,
 limite do bucket (só WebP até 1 MB) e limpeza automática das imagens sem uso (`apagarImagensSemUso()` em
 `lib/imagem.ts`, roda quando o mestre abre a Mesa ou o Catálogo e só pega imagens com mais de 1 hora),
 funções da Vercel em São Paulo, imagens guardadas no celular pelo service worker, e telas de carregamento
-(esqueletos), erro, página não encontrada, listas vazias e aviso de sem internet.
+(esqueletos), erro, página não encontrada, listas vazias e aviso de sem internet. **Fase A do sistema novo**
+(a ficha): Vigor/Mental/Social com D100, especializações com D20 e bônus, quatro estados de vida, Sinergia,
+raça e limites por ficha. As fichas antigas foram convertidas: as características começaram pela média das
+especializações e Criar entrou com 0 — **o mestre precisa conferir e ajustar esses valores**.
 
-**Em andamento:** nada.
+**Em andamento:** nada. Próxima: Fase B (cartas).
 
 **Lição (24/11):** o Supabase pausou entre 16 e 19/11 mesmo com o keep-alive antigo, porque a consulta recebia
 "sem permissão" e isso não contou como uso. O batimento precisa ser uma operação que dá certo (hoje, uma escrita).
@@ -142,15 +153,14 @@ deploy da Vercel falhou. Atualizado para 16.4.6. Se um deploy falhar do nada, ro
 **Ainda não testado logado:**
 - A limpeza de imagens (confira se uma imagem trocada some do Storage depois de 1 hora, ao abrir a Mesa como mestre).
 - As imagens guardadas no celular (na segunda abertura da ficha, as imagens aparecem na hora, sem baixar de novo).
+- A Fase A: D100 numa característica, D20 numa especialização (com bônus), Reforçar/Refazer nos dois dados,
+  e o mestre editando características, bônus, limiar de Instável, limite de congelamento e raça.
 - A ficha e a Mesa mais rápidas com as funções em São Paulo (medir na aba Rede do navegador).
 
 ## Pendências
 
 **Adaptar o app ao sistema novo** (`docs/SISTEMA.md`), em fases:
-- **A — Ficha:** Vigor no lugar de Força, especialização Criar, valor de Vigor/Mental/Social digitado pelo mestre,
-  D100 na característica (empate = sucesso), D20 na especialização (app rola e soma bônus, mestre julga),
-  Ferido abaixo de 50% da vida máxima, limiar de Instável e de congelamento por personagem, estado Morrendo,
-  Sinergia, Proteção, raça, Nível Cósmico. O Compêndio é a fonte oficial (só o empate do D100 conta como sucesso).
+- **A — Ficha:** no ar desde 25/11 (ver Regras do jogo).
 - **B — Cartas:** arquétipos (12, texto do Compêndio), traumas (7, ativar = 5 PE), Caminhos (Amor/Revolta/Absurdo,
   nível, custo em Sinergia), habilidades únicas; artes das 19 cartas.
 - **C — Inventário:** espaços por raridade, dano/bônus/criador, memórias com nome e efeito, estrelas.

@@ -10,11 +10,14 @@ import { Input } from "@/components/ui/input";
 import type { Atributo, Grupo } from "@/lib/ficha-tipos";
 import { createClient, nomeCanal } from "@/lib/supabase/client";
 
-const GRUPOS: { grupo: Grupo; titulo: string; texto: string; circulo: string }[] = [
-  { grupo: "forca", titulo: "Força", texto: "text-forca", circulo: "bg-forca" },
-  { grupo: "mental", titulo: "Mental", texto: "text-mental", circulo: "bg-mental" },
-  { grupo: "social", titulo: "Social", texto: "text-social", circulo: "bg-social" },
+// As três características (Compêndio): o D100 rola nelas; as especializações de cada uma rolam no D20.
+const GRUPOS: { grupo: Grupo; titulo: string; texto: string; circulo: string; borda: string }[] = [
+  { grupo: "vigor", titulo: "Vigor", texto: "text-forca", circulo: "bg-forca", borda: "border-forca" },
+  { grupo: "mental", titulo: "Mental", texto: "text-mental", circulo: "bg-mental", borda: "border-mental" },
+  { grupo: "social", titulo: "Social", texto: "text-social", circulo: "bg-social", borda: "border-social" },
 ];
+
+const limitar = (n: number, min: number, max: number) => Math.max(min, Math.min(max, Math.round(n)));
 
 // O PE no losango dourado, ao lado da rolagem, como na ficha do Canva.
 function LosangoPE() {
@@ -53,15 +56,40 @@ function LosangoPE() {
   );
 }
 
+function CampoNumero({
+  valor,
+  rotulo,
+  aoSalvar,
+  className,
+}: {
+  valor: number;
+  rotulo: string;
+  aoSalvar: (texto: string) => void;
+  className?: string;
+}) {
+  return (
+    <Input
+      key={valor}
+      type="number"
+      inputMode="numeric"
+      defaultValue={valor}
+      aria-label={rotulo}
+      onBlur={(e) => aoSalvar(e.currentTarget.value)}
+      className={cn("h-9 w-16 text-center font-heading text-lg md:text-lg", className)}
+    />
+  );
+}
+
 export function Atributos({ inicial }: { inicial: Atributo[] }) {
-  const { personagem, editando, travado, setStatus, morto } = useFicha();
-  const { rolar, rolando, reforcar } = useRolador();
+  const { personagem, editando, travado, setStatus, morto, salvar } = useFicha();
+  const { rolarD100, rolarD20, rolando, reforcar } = useRolador();
   const supabase = useMemo(() => createClient(), []);
   const [atributos, setAtributos] = useState(inicial);
   const confirmados = useRef(inicial);
   const podeEditar = editando && !travado("atributos");
+  const semRolar = rolando || editando || morto;
 
-  // ao vivo: o mestre ajusta um atributo e ele muda aqui
+  // ao vivo: o mestre ajusta uma especialização e ela muda aqui
   useEffect(() => {
     const canal = supabase
       .channel(nomeCanal(`atributos-${personagem.id}`))
@@ -70,7 +98,8 @@ export function Atributos({ inicial }: { inicial: Atributo[] }) {
         { event: "UPDATE", schema: "public", table: "atributos", filter: `personagem_id=eq.${personagem.id}` },
         (payload) => {
           const novo = payload.new as Atributo;
-          const trocar = (lista: Atributo[]) => lista.map((a) => (a.id === novo.id ? { ...a, valor: novo.valor } : a));
+          const trocar = (lista: Atributo[]) =>
+            lista.map((a) => (a.id === novo.id ? { ...a, valor: novo.valor, bonus: novo.bonus } : a));
           confirmados.current = trocar(confirmados.current);
           setAtributos(trocar);
         },
@@ -81,22 +110,31 @@ export function Atributos({ inicial }: { inicial: Atributo[] }) {
     };
   }, [supabase, personagem.id]);
 
-  async function salvarValor(id: string, texto: string) {
-    const valor = Math.max(0, Math.min(100, Math.round(Number(texto))));
+  async function salvarEspecializacao(id: string, campo: "valor" | "bonus", texto: string) {
+    const numero = Number(texto);
     const atual = atributos.find((a) => a.id === id);
-    if (!atual || Number.isNaN(valor) || valor === atual.valor) return;
+    if (!atual || texto.trim() === "" || Number.isNaN(numero)) return;
+    const novo = campo === "valor" ? limitar(numero, 0, 100) : limitar(numero, -20, 20);
+    if (novo === atual[campo]) return;
 
-    setAtributos((lista) => lista.map((a) => (a.id === id ? { ...a, valor } : a)));
+    setAtributos((lista) => lista.map((a) => (a.id === id ? { ...a, [campo]: novo } : a)));
     setStatus("salvando");
-    const { error } = await supabase.from("atributos").update({ valor }).eq("id", id);
+    const { error } = await supabase.from("atributos").update({ [campo]: novo }).eq("id", id);
     if (error) {
       toast.error(error.message);
       setAtributos(confirmados.current);
       setStatus("erro");
       return;
     }
-    confirmados.current = confirmados.current.map((a) => (a.id === id ? { ...a, valor } : a));
+    confirmados.current = confirmados.current.map((a) => (a.id === id ? { ...a, [campo]: novo } : a));
     setStatus("salvo");
+  }
+
+  function salvarCaracteristica(grupo: Grupo, texto: string) {
+    const numero = Number(texto);
+    if (texto.trim() === "" || Number.isNaN(numero)) return;
+    const novo = limitar(numero, 0, 100);
+    if (novo !== personagem[grupo]) void salvar({ [grupo]: novo });
   }
 
   return (
@@ -104,53 +142,87 @@ export function Atributos({ inicial }: { inicial: Atributo[] }) {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h2 className="text-2xl tracking-wide">Jogue um D100</h2>
-          <p className="text-lg text-muted-foreground">Para realizar uma ação tire menos que:</p>
-          {!editando && !morto && (
-            <p className="text-base text-muted-foreground/70">
-              {reforcar ? "Reforço armado: a próxima rolagem usa 2 dados." : "Toque num atributo para rolar."}
-            </p>
+          <p className="text-lg leading-snug text-muted-foreground">
+            Ação geral: tire menos que a característica. Especialização: jogue um D20.
+          </p>
+          {!editando && !morto && reforcar && (
+            <p className="text-base text-ouro">Reforço armado: a próxima rolagem usa 2 dados.</p>
           )}
           {editando && travado("atributos") && <Travado className="mt-1" />}
         </div>
         <LosangoPE />
       </div>
 
-      <div className="grid gap-x-6 gap-y-5 sm:grid-cols-3">
-        {GRUPOS.map(({ grupo, titulo, texto, circulo }) => (
-          <div key={grupo}>
-            <h3 className={cn("mb-2 text-base tracking-[0.2em] uppercase", texto)}>{titulo}</h3>
-            <ul className="grid grid-cols-2 gap-x-2 gap-y-1 sm:grid-cols-1">
+      <div className="grid gap-x-6 gap-y-6 sm:grid-cols-3">
+        {GRUPOS.map(({ grupo, titulo, texto, circulo, borda }) => (
+          <div key={grupo} className="flex flex-col gap-2">
+            {/* a característica: o número grande, rola o D100 */}
+            {podeEditar ? (
+              <div className="flex min-h-12 items-center gap-3">
+                <CampoNumero
+                  valor={personagem[grupo]}
+                  rotulo={`${titulo} (%)`}
+                  aoSalvar={(t) => salvarCaracteristica(grupo, t)}
+                  className="h-11 w-18 text-xl md:text-xl"
+                />
+                <span className={cn("font-heading text-lg tracking-[0.2em] uppercase", texto)}>{titulo}</span>
+              </div>
+            ) : (
+              <button
+                type="button"
+                disabled={semRolar}
+                onClick={() => rolarD100(grupo)}
+                aria-label={`Rolar D100 em ${titulo} (${personagem[grupo]})`}
+                className={cn(
+                  "flex min-h-14 w-full items-center gap-3 rounded-xl border border-white/10 bg-secondary/40 px-3 py-2 text-left transition-colors hover:bg-secondary active:bg-accent disabled:hover:bg-secondary/40",
+                )}
+              >
+                <span
+                  className={cn(
+                    "flex size-12 shrink-0 items-center justify-center rounded-full font-heading text-xl font-bold text-white tabular-nums",
+                    circulo,
+                  )}
+                >
+                  {personagem[grupo]}
+                </span>
+                <span className={cn("font-heading text-lg tracking-[0.2em] uppercase", texto)}>{titulo}</span>
+                <span className="ml-auto font-heading text-xs tracking-widest text-muted-foreground">D100</span>
+              </button>
+            )}
+
+            {/* as especializações: rolam o D20 e somam o bônus */}
+            {/* editando: uma por linha, com o valor, o nome e o bônus alinhados */}
+            <ul className={cn("grid gap-x-2 gap-y-1", podeEditar ? "grid-cols-1" : "grid-cols-2 sm:grid-cols-1")}>
               {atributos
                 .filter((a) => a.grupo === grupo)
                 .map((a) => (
                   <li key={a.id}>
                     {podeEditar ? (
-                      <div className="flex min-h-10 items-center gap-3">
-                        <Input
-                          key={a.valor}
-                          type="number"
-                          inputMode="numeric"
-                          min={0}
-                          max={100}
-                          defaultValue={a.valor}
-                          aria-label={a.nome}
-                          onBlur={(e) => salvarValor(a.id, e.currentTarget.value)}
-                          className="h-9 w-16 text-center font-heading text-lg md:text-lg"
-                        />
-                        <span className="font-heading text-base tracking-wide uppercase">{a.nome}</span>
+                      <div className="flex min-h-10 items-center gap-2">
+                        <CampoNumero valor={a.valor} rotulo={a.nome} aoSalvar={(t) => salvarEspecializacao(a.id, "valor", t)} />
+                        <span className="min-w-0 flex-1 truncate font-heading text-base tracking-wide uppercase">{a.nome}</span>
+                        <label className="flex shrink-0 items-center gap-1 text-sm text-muted-foreground">
+                          bônus
+                          <CampoNumero
+                            valor={a.bonus}
+                            rotulo={`Bônus de D20 em ${a.nome}`}
+                            aoSalvar={(t) => salvarEspecializacao(a.id, "bonus", t)}
+                            className="h-8 w-14 text-base md:text-base"
+                          />
+                        </label>
                       </div>
                     ) : (
                       <button
                         type="button"
-                        disabled={rolando || editando || morto}
-                        onClick={() => rolar(a.id)}
-                        aria-label={`Rolar ${a.nome} (${a.valor})`}
+                        disabled={semRolar}
+                        onClick={() => rolarD20(a.id)}
+                        aria-label={`Rolar D20 em ${a.nome} (${a.valor}${a.bonus ? `, bônus ${a.bonus}` : ""})`}
                         className="flex min-h-11 w-full min-w-0 items-center gap-2 rounded-lg px-1 text-left transition-colors hover:bg-secondary active:bg-accent disabled:hover:bg-transparent sm:-mx-2 sm:gap-3 sm:px-2"
                       >
                         <span
                           className={cn(
-                            "flex size-8 shrink-0 items-center justify-center rounded-full font-heading text-sm font-bold text-white tabular-nums sm:size-9",
-                            circulo,
+                            "flex size-8 shrink-0 items-center justify-center rounded-full border-2 font-heading text-sm font-bold tabular-nums sm:size-9",
+                            borda,
                           )}
                         >
                           {a.valor}
@@ -158,6 +230,11 @@ export function Atributos({ inicial }: { inicial: Atributo[] }) {
                         <span className="truncate font-heading text-[0.8rem] uppercase sm:text-base sm:tracking-wide">
                           {a.nome}
                         </span>
+                        {a.bonus !== 0 && (
+                          <span className="shrink-0 font-heading text-xs text-ouro tabular-nums">
+                            {a.bonus > 0 ? `+${a.bonus}` : `−${Math.abs(a.bonus)}`}
+                          </span>
+                        )}
                       </button>
                     )}
                   </li>

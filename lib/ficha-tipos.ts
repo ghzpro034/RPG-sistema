@@ -11,9 +11,21 @@ export type Personagem = {
   caminho: string | null;
   vida: number;
   vida_max: number;
+  /** Pontos de Proteção (armadura); a coluna se chama defesa desde o sistema antigo */
   defesa: number;
   corrupcao: number;
   congelado: number;
+  /** congela no frio quando passa deste número (cada ficha tem o seu) */
+  limite_congelado: number;
+  /** abaixo disto o personagem fica Instável (o Ferido é automático, abaixo de 50% da vida) */
+  limiar_instavel: number;
+  /** características em %: o D100 rola contra elas; o mestre digita */
+  vigor: number;
+  mental: number;
+  social: number;
+  /** pontos de Sinergia: pagam as habilidades de Caminho */
+  sinergia: number;
+  raca: Raca | null;
   /** moeda do RPG; 0 enquanto a migration da moeda não roda */
   dentes: number;
   pe: number;
@@ -26,13 +38,25 @@ export type Personagem = {
   epitafio: string | null;
 };
 
-export type Grupo = "forca" | "mental" | "social";
+export type Raca = "errante" | "palido" | "sanguineo";
 
+export const RACAS: { valor: Raca; nome: string }[] = [
+  { valor: "errante", nome: "Errante" },
+  { valor: "palido", nome: "Pálido" },
+  { valor: "sanguineo", nome: "Sanguíneo" },
+];
+
+/** as três características; cada especialização pertence a uma delas */
+export type Grupo = "vigor" | "mental" | "social";
+
+/** uma especialização (Força, Vasculhar, Lábia…): o D20 rola nela */
 export type Atributo = {
   id: string;
   grupo: Grupo;
   nome: string;
   valor: number;
+  /** bônus fixo no D20 (ex.: +2 de um arquétipo) */
+  bonus: number;
   ordem: number;
 };
 
@@ -79,14 +103,23 @@ export type Graca = {
   descricao: string | null;
 };
 
+export type Dado = "d100" | "d20";
+
 export type Rolagem = {
   id: string;
   campanha_id: string;
   personagem_id: string;
+  /** D100: na característica (passa com resultado ≤ alvo). D20: na especialização (soma o bônus; o mestre julga) */
+  dado: Dado;
+  /** nome da característica ou da especialização */
   atributo: string;
+  /** D100: o valor da característica. D20: o valor da especialização, só para referência */
   alvo: number;
+  /** o dado que valeu (D100: o menor; D20: o maior) */
   resultado: number;
-  sucesso: boolean;
+  bonus: number;
+  /** só no D100; no D20 quem decide é o mestre */
+  sucesso: boolean | null;
   /** os dados da última jogada: 1, ou 2 quando reforçada */
   dados: number[];
   reforcado: boolean;
@@ -112,8 +145,6 @@ export type DadosFicha = {
 };
 
 export const ESPACOS_INVENTARIO = 4;
-// passou disso, o personagem congela no frio
-export const LIMITE_CONGELADO = 10;
 export const BUCKET_IMAGENS = "imagens";
 // URLs assinadas valem uma semana; a página é recarregada bem antes disso
 export const VALIDADE_URL = 60 * 60 * 24 * 7;

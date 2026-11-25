@@ -5,7 +5,7 @@ import { useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { TextoEditavel } from "@/components/ficha/campos";
 import { useFicha } from "@/components/ficha/contexto";
-import { BUCKET_IMAGENS, VALIDADE_URL, type Carta } from "@/lib/ficha-tipos";
+import { BUCKET_IMAGENS, RACAS, VALIDADE_URL, type Carta, type Raca } from "@/lib/ficha-tipos";
 import { comprimirParaWebp, mensagemDeEnvio } from "@/lib/imagem";
 import { createClient } from "@/lib/supabase/client";
 
@@ -63,14 +63,14 @@ export function Cabecalho({ retratoInicial, cartas }: { retratoInicial: string |
         {/* medalhão do nível */}
         <div
           className="absolute -top-1 -right-3 flex size-11 items-center justify-center rounded-full border-4 border-double border-white/60 bg-secondary font-heading text-xl font-bold sm:size-14 sm:text-2xl"
-          aria-label={`Nível ${p.nivel ?? ""}`}
+          aria-label={`Nível Cósmico ${p.nivel ?? ""}`}
         >
           {editando ? (
             <TextoEditavel
               valor={p.nivel ?? ""}
               aoSalvar={(nivel) => salvar({ nivel })}
               editavel
-              rotulo="Nível"
+              rotulo="Nível Cósmico"
               campoClassName="h-9 w-10 border-0 bg-transparent px-0 text-center font-heading text-lg font-bold"
             />
           ) : (
@@ -78,10 +78,11 @@ export function Cabecalho({ retratoInicial, cartas }: { retratoInicial: string |
           )}
         </div>
 
-        {/* escudo da defesa */}
+        {/* escudo da proteção (armadura) */}
         <div
           className="absolute -right-3 bottom-1 flex size-11 items-center justify-center sm:bottom-2 sm:size-14"
-          aria-label={`Defesa ${p.defesa}`}
+          aria-label={`Proteção ${p.defesa}`}
+          title="Pontos de Proteção"
         >
           <Shield className="absolute size-11 fill-secondary text-white/60 sm:size-14" aria-hidden />
           <span className="relative font-heading text-lg font-bold sm:text-xl">{p.defesa}</span>
@@ -127,6 +128,28 @@ export function Cabecalho({ retratoInicial, cartas }: { retratoInicial: string |
             />
           ) : (
             <h1 className="text-2xl leading-tight font-bold tracking-wide break-words uppercase sm:text-4xl">{p.nome}</h1>
+          )}
+          {/* raça: só o mestre escolhe */}
+          {editando && souMestre ? (
+            <select
+              value={p.raca ?? ""}
+              onChange={(e) => salvar({ raca: (e.target.value || null) as Raca | null })}
+              aria-label="Raça"
+              className="mt-2 h-10 rounded-md border border-input bg-transparent px-2 text-lg"
+            >
+              <option value="">Raça não definida</option>
+              {RACAS.map((r) => (
+                <option key={r.valor} value={r.valor}>
+                  {r.nome}
+                </option>
+              ))}
+            </select>
+          ) : (
+            p.raca && (
+              <p className="font-heading text-sm tracking-[0.2em] text-muted-foreground uppercase">
+                {RACAS.find((r) => r.valor === p.raca)?.nome}
+              </p>
+            )
           )}
         </div>
 

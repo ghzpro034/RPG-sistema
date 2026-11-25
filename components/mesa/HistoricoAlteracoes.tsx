@@ -10,7 +10,14 @@ const CAMPOS: Record<string, string> = {
   caminho: "Caminho",
   vida: "Vida",
   vida_max: "Vida máx.",
-  defesa: "Defesa",
+  defesa: "Proteção",
+  vigor: "Vigor",
+  mental: "Mental",
+  social: "Social",
+  sinergia: "Sinergia",
+  limiar_instavel: "Limiar de Instável",
+  limite_congelado: "Limite de congelamento",
+  raca: "Raça",
   corrupcao: "Corrupção",
   congelado: "Congelamento",
   dentes: "Dentes",
@@ -23,7 +30,24 @@ const CAMPOS: Record<string, string> = {
   morto_em: "Morte",
 };
 
-const CURTOS = new Set(["vida", "vida_max", "defesa", "corrupcao", "congelado", "dentes", "pe", "pe_max", "nivel"]);
+const CURTOS = new Set([
+  "vida",
+  "vida_max",
+  "defesa",
+  "corrupcao",
+  "congelado",
+  "dentes",
+  "pe",
+  "pe_max",
+  "nivel",
+  "vigor",
+  "mental",
+  "social",
+  "sinergia",
+  "limiar_instavel",
+  "limite_congelado",
+  "raca",
+]);
 
 function descrever(a: Alteracao) {
   if (a.tabela === "atributos") return { campo: a.campo, mudanca: `${a.de} → ${a.para}` };

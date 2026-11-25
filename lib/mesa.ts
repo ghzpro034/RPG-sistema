@@ -4,7 +4,19 @@ import { createClient } from "@/lib/supabase/server";
 
 export type CardPersonagem = Pick<
   Personagem,
-  "id" | "nome" | "vida" | "vida_max" | "pe" | "pe_max" | "corrupcao" | "defesa" | "congelado" | "retrato_path"
+  | "id"
+  | "nome"
+  | "vida"
+  | "vida_max"
+  | "pe"
+  | "pe_max"
+  | "corrupcao"
+  | "defesa"
+  | "congelado"
+  | "retrato_path"
+  | "limiar_instavel"
+  | "limite_congelado"
+  | "sinergia"
 > & { jogador: string; retratoUrl: string | null; itens: number };
 
 export type Alteracao = {
@@ -55,7 +67,7 @@ export async function carregarMesa(campanhaId: string, mestreId: string, outrasM
       supabase
         .from("mesa_personagens")
         .select(
-          "personagens!inner(id, nome, vida, vida_max, pe, pe_max, corrupcao, defesa, congelado, retrato_path, profiles(nome), inventario(count))",
+          "personagens!inner(id, nome, vida, vida_max, pe, pe_max, corrupcao, defesa, congelado, retrato_path, limiar_instavel, limite_congelado, sinergia, profiles(nome), inventario(count))",
         )
         .eq("campanha_id", campanhaId)
         .is("personagens.morto_em", null),

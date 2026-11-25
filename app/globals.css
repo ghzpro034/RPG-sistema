@@ -15,6 +15,7 @@
   --color-estavel: var(--estavel);
   --color-ferido: var(--ferido);
   --color-instavel: var(--instavel);
+  --color-morrendo: var(--morrendo);
   --color-corrupcao: var(--corrupcao);
   --color-caminho: var(--caminho);
   --color-forca: var(--forca);
@@ -105,6 +106,8 @@
   --estavel: oklch(0.58 0.14 150);
   --ferido: oklch(0.82 0.15 85);
   --instavel: oklch(0.6 0.22 27);
+  /* Morrendo: vermelho escuro, quase preto */
+  --morrendo: oklch(0.45 0.17 20);
   --corrupcao: oklch(0.55 0.2 320);
   --forca: oklch(0.6 0.22 27);
   --mental: oklch(0.72 0.13 235);

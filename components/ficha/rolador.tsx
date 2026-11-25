@@ -6,7 +6,7 @@ import { createContext, use, useCallback, useEffect, useMemo, useState } from "r
 import { toast } from "sonner";
 import { useFicha } from "@/components/ficha/contexto";
 import { Button } from "@/components/ui/button";
-import { CUSTO_REFAZER, CUSTO_REFORCAR, type Rolagem } from "@/lib/ficha-tipos";
+import { CUSTO_REFAZER, CUSTO_REFORCAR, type Grupo, type Rolagem } from "@/lib/ficha-tipos";
 import { createClient, nomeCanal } from "@/lib/supabase/client";
 
 type Contexto = {
@@ -15,7 +15,10 @@ type Contexto = {
   rolando: boolean;
   ultima: Rolagem | null;
   historico: Rolagem[];
-  rolar: (atributoId: string) => Promise<void>;
+  /** D100 numa característica (Vigor, Mental, Social) */
+  rolarD100: (caracteristica: Grupo) => Promise<void>;
+  /** D20 numa especialização */
+  rolarD20: (atributoId: string) => Promise<void>;
   refazer: () => Promise<void>;
   fechar: () => void;
 };
@@ -88,20 +91,21 @@ export function RoladorProvider({ campanhaAtual, children }: { campanhaAtual: st
     [sincronizar],
   );
 
-  const rolar = useCallback(
-    async (atributoId: string) => {
+  const pedir = useCallback(
+    async (rpc: "rolar_d100" | "rolar_d20", args: Record<string, unknown>) => {
       setRolando(true);
-      const { data, error } = await supabase.rpc("rolar_d100", {
-        p_atributo_id: atributoId,
-        p_reforcar: reforcar,
-        p_campanha: campanhaAtual,
-      });
+      const { data, error } = await supabase.rpc(rpc, { ...args, p_reforcar: reforcar, p_campanha: campanhaAtual });
       setReforcar(false);
       await depoisDaRpc(data, error);
       setRolando(false);
     },
     [supabase, reforcar, campanhaAtual, depoisDaRpc],
   );
+  const rolarD100 = useCallback(
+    (caracteristica: Grupo) => pedir("rolar_d100", { p_personagem: personagem.id, p_caracteristica: caracteristica }),
+    [pedir, personagem.id],
+  );
+  const rolarD20 = useCallback((atributoId: string) => pedir("rolar_d20", { p_atributo_id: atributoId }), [pedir]);
 
   const refazer = useCallback(async () => {
     if (!ultima) return;
@@ -113,7 +117,7 @@ export function RoladorProvider({ campanhaAtual, children }: { campanhaAtual: st
 
   return (
     <RoladorContexto
-      value={{ reforcar, setReforcar, rolando, ultima, historico, rolar, refazer, fechar: () => setUltima(null) }}
+      value={{ reforcar, setReforcar, rolando, ultima, historico, rolarD100, rolarD20, refazer, fechar: () => setUltima(null) }}
     >
       {children}
     </RoladorContexto>
@@ -151,18 +155,29 @@ export function AcoesPE() {
   );
 }
 
+// D20: o total (dado + bônus), em dourado, porque quem julga é o mestre. D100: verde ou vermelho.
+export function totalDe(rolagem: Rolagem) {
+  return rolagem.dado === "d20" ? rolagem.resultado + (rolagem.bonus ?? 0) : rolagem.resultado;
+}
+
 export function Resultado({ rolagem, className }: { rolagem: Rolagem; className?: string }) {
   return (
     <span
       className={cn(
         "font-heading font-bold tabular-nums",
-        rolagem.sucesso ? "text-estavel" : "text-instavel",
+        rolagem.dado === "d20" ? "text-ouro" : rolagem.sucesso ? "text-estavel" : "text-instavel",
         className,
       )}
     >
-      {rolagem.resultado}
+      {totalDe(rolagem)}
     </span>
   );
+}
+
+// "14 + 2" no D20 com bônus; nada no D100 nem no D20 sem bônus
+function contaDoD20(rolagem: Rolagem) {
+  if (rolagem.dado !== "d20" || !rolagem.bonus) return null;
+  return `${rolagem.resultado} ${rolagem.bonus > 0 ? "+" : "−"} ${Math.abs(rolagem.bonus)}`;
 }
 
 // Painel do resultado, preso embaixo da tela para aparecer mesmo rolando a página.
@@ -183,17 +198,24 @@ export function PainelResultado() {
             <div className="flex items-center gap-4">
               <div className="flex flex-col items-center">
                 <Resultado rolagem={ultima} className={cn("text-5xl", rolando && "opacity-40")} />
-                <span className={cn("font-heading text-sm tracking-widest uppercase", ultima.sucesso ? "text-estavel" : "text-instavel")}>
-                  {ultima.sucesso ? "Sucesso" : "Falha"}
-                </span>
+                {ultima.dado === "d20" ? (
+                  <span className="font-heading text-sm tracking-widest text-ouro uppercase">D20</span>
+                ) : (
+                  <span className={cn("font-heading text-sm tracking-widest uppercase", ultima.sucesso ? "text-estavel" : "text-instavel")}>
+                    {ultima.sucesso ? "Sucesso" : "Falha"}
+                  </span>
+                )}
               </div>
               <div className="min-w-0 flex-1 text-base">
                 <p className="font-heading text-lg tracking-wide uppercase">
-                  {ultima.atributo} <span className="text-muted-foreground">≤ {ultima.alvo}</span>
+                  {ultima.atributo}{" "}
+                  {ultima.dado === "d100" && <span className="text-muted-foreground">≤ {ultima.alvo}</span>}
                 </p>
+                {contaDoD20(ultima) && <p className="text-muted-foreground">Dado {contaDoD20(ultima)} de bônus</p>}
+                {ultima.dado === "d20" && <p className="text-muted-foreground">O mestre diz se passou.</p>}
                 {ultima.dados?.length > 1 && (
                   <p className="text-muted-foreground">
-                    Reforçado: {ultima.dados.join(" e ")}, vale o menor
+                    Reforçado: {ultima.dados.join(" e ")}, vale o {ultima.dado === "d20" ? "maior" : "menor"}
                   </p>
                 )}
                 {ultima.refeitos > 0 && (
@@ -231,7 +253,7 @@ export function UltimasRolagens() {
           <li key={r.id} className="flex items-center gap-2 rounded-full border border-border px-3 py-0.5 text-base">
             <span className="uppercase">{r.atributo}</span>
             <Resultado rolagem={r} />
-            <span className="text-muted-foreground">/ {r.alvo}</span>
+            <span className="text-muted-foreground">{r.dado === "d20" ? "D20" : `/ ${r.alvo}`}</span>
             {r.reforcado && <span className="text-ouro" title="Reforçado">✦</span>}
             {r.refeitos > 0 && <RotateCcw className="size-3.5 text-muted-foreground" aria-label="Refeito" />}
           </li>

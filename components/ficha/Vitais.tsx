@@ -1,17 +1,19 @@
 "use client";
 
-import { Flag, HeartPulse, Minus, Plus, Snowflake } from "lucide-react";
+import { Flag, HeartPulse, Minus, Plus, Snowflake, Sparkles } from "lucide-react";
 import { cn } from "cn";
 import { Contador, Travado } from "@/components/ficha/campos";
 import { useFicha } from "@/components/ficha/contexto";
 import { Button } from "@/components/ui/button";
-import { corDoEstado, estadoDe, fundoDoEstado, type Estado } from "@/lib/estado";
-import { LIMITE_CONGELADO } from "@/lib/ficha-tipos";
+import { EFEITO_DO_ESTADO, corDoEstado, estadoDe, fundoDoEstado, metadeDaVida, type Estado } from "@/lib/estado";
+import type { Personagem } from "@/lib/ficha-tipos";
 
-const LEGENDA: { estado: Estado; limite: (vidaMax: number) => string }[] = [
-  { estado: "Estável", limite: (vidaMax) => `até ${vidaMax}` },
-  { estado: "Ferido", limite: () => "menos de 10" },
-  { estado: "Instável", limite: () => "menos de 5" },
+// Compêndio: Ferido abaixo de 50% da vida; o limiar de Instável é de cada ficha; Morrendo em 0.
+const LEGENDA: { estado: Estado; limite: (p: Personagem) => string }[] = [
+  { estado: "Estável", limite: (p) => `${metadeDaVida(p.vida_max)} ou mais` },
+  { estado: "Ferido", limite: (p) => `menos de ${metadeDaVida(p.vida_max)}` },
+  { estado: "Instável", limite: (p) => `menos de ${p.limiar_instavel}` },
+  { estado: "Morrendo", limite: () => "0" },
 ];
 
 function Rotulo({ children, className }: { children: React.ReactNode; className?: string }) {
@@ -22,15 +24,17 @@ function Rotulo({ children, className }: { children: React.ReactNode; className?
 
 // Coluna da esquerda da ficha: vida, estado, corrupção e congelado.
 export function Vitais() {
-  const { personagem: p, editando, travado, salvarDepois, morto } = useFicha();
-  const estado = estadoDe(p.vida);
+  const { personagem: p, editando, travado, salvarDepois, morto, souMestre } = useFicha();
+  const estado = estadoDe(p.vida, p.vida_max, p.limiar_instavel);
+  // limites do estado e do frio: só o mestre mexe
+  const editaLimites = editando && souMestre;
   const porcentagem = Math.max(0, Math.min(100, (p.vida / p.vida_max) * 100));
   const vidaMaxTravada = travado("vida_max");
   const congelado = p.congelado;
-  const congelou = congelado > LIMITE_CONGELADO;
+  const congelou = congelado > p.limite_congelado;
 
   return (
-    <section className="grid gap-5 sm:grid-cols-2">
+    <section className="grid grid-cols-[minmax(0,1fr)] gap-5 sm:grid-cols-2">
       {/* Vida: − e + sempre à mão, é o que mais muda durante a sessão */}
       <div className="flex flex-col gap-3">
         <div className="flex items-center gap-3">
@@ -106,20 +110,35 @@ export function Vitais() {
           ))}
       </div>
 
-      {/* Estados, com o atual em destaque */}
-      <ul className="flex flex-col gap-1.5" aria-label="Estados">
-        {LEGENDA.map(({ estado: e, limite }) => (
-          <li
-            key={e}
-            className={cn("flex items-center gap-3 transition-opacity", e === estado ? "opacity-100" : "opacity-35")}
-            aria-current={e === estado ? "true" : undefined}
-          >
-            <Flag className={cn("size-6 fill-current", corDoEstado[e])} aria-hidden />
-            <span className={cn("w-24 font-heading text-lg", corDoEstado[e])}>{e}</span>
-            <span className="text-base text-muted-foreground">{limite(p.vida_max)}</span>
-          </li>
-        ))}
-      </ul>
+      {/* Estados, com o atual em destaque e o que ele impõe */}
+      <div className="flex flex-col gap-2">
+        <ul className="flex flex-col gap-1.5" aria-label="Estados">
+          {LEGENDA.map(({ estado: e, limite }) => (
+            <li
+              key={e}
+              className={cn("flex items-center gap-3 transition-opacity", e === estado ? "opacity-100" : "opacity-35")}
+              aria-current={e === estado ? "true" : undefined}
+            >
+              <Flag className={cn("size-6 fill-current", corDoEstado[e])} aria-hidden />
+              <span className={cn("w-28 font-heading text-lg", corDoEstado[e])}>{e}</span>
+              <span className="text-base text-muted-foreground">{limite(p)}</span>
+            </li>
+          ))}
+        </ul>
+        {/* o limiar de Instável é de cada ficha; só o mestre muda */}
+        {editaLimites && (
+          <div className="flex items-center gap-3">
+            <Rotulo className="text-instavel">Instável abaixo de</Rotulo>
+            <Contador
+              rotulo="limiar de Instável"
+              valor={p.limiar_instavel}
+              max={p.vida_max}
+              aoMudar={(limiar_instavel) => salvarDepois({ limiar_instavel })}
+            />
+          </div>
+        )}
+        <p className={cn("text-base leading-snug", corDoEstado[estado])}>{EFEITO_DO_ESTADO[estado]}</p>
+      </div>
 
       <div className="flex flex-wrap items-center gap-x-6 gap-y-3 sm:col-span-2">
         <div className="flex items-center gap-3">
@@ -135,14 +154,22 @@ export function Vitais() {
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1" role={congelou ? "status" : undefined}>
           <div
             className={cn(
-              "flex items-center gap-2 rounded-full border px-4 py-1.5 whitespace-nowrap text-congelado transition-colors",
+              "flex flex-wrap items-center gap-x-2 gap-y-1 rounded-3xl border px-4 py-1.5 text-congelado transition-colors",
               congelou ? "border-congelado bg-congelado/20" : "border-congelado/40",
             )}
           >
             <Snowflake className={cn("size-4", congelou && "animate-pulse")} aria-hidden />
             <Rotulo>Congelado</Rotulo>
             <span className="text-sm">mais do que</span>
-            <span className="font-heading text-xl">{LIMITE_CONGELADO}</span>
+            {editaLimites ? (
+              <Contador
+                rotulo="limite de congelamento"
+                valor={p.limite_congelado}
+                aoMudar={(limite_congelado) => salvarDepois({ limite_congelado })}
+              />
+            ) : (
+              <span className="font-heading text-xl">{p.limite_congelado}</span>
+            )}
           </div>
           {congelou && (
             <span className="font-heading text-sm font-bold tracking-wider text-congelado uppercase">
@@ -151,11 +178,24 @@ export function Vitais() {
           )}
         </div>
 
-        {/* a defesa aparece no escudo do retrato; aqui só para editar */}
+        {/* Sinergia muda no meio do combate: − e + sempre à mão */}
+        <div className="flex items-center gap-3">
+          <Rotulo className="flex items-center gap-1.5 text-mental">
+            <Sparkles className="size-4" aria-hidden /> Sinergia
+          </Rotulo>
+          <Contador
+            rotulo="pontos de sinergia"
+            valor={p.sinergia}
+            desabilitado={morto}
+            aoMudar={(sinergia) => salvarDepois({ sinergia })}
+          />
+        </div>
+
+        {/* a proteção (armadura) aparece no escudo do retrato; aqui só para editar */}
         {editando && (
           <div className="flex items-center gap-3">
-            <Rotulo className="text-muted-foreground">Defesa</Rotulo>
-            <Contador rotulo="defesa" valor={p.defesa} aoMudar={(defesa) => salvarDepois({ defesa })} />
+            <Rotulo className="text-muted-foreground">Proteção</Rotulo>
+            <Contador rotulo="pontos de proteção" valor={p.defesa} aoMudar={(defesa) => salvarDepois({ defesa })} />
           </div>
         )}
       </div>

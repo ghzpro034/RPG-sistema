@@ -13,7 +13,7 @@ import { Resultado } from "@/components/ficha/rolador";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { corDoEstado, estadoDe, fundoDoEstado } from "@/lib/estado";
 import { apagarImagensSemUso } from "@/lib/imagem";
-import { LIMITE_CONGELADO, type Personagem, type Rolagem } from "@/lib/ficha-tipos";
+import type { Personagem, Rolagem } from "@/lib/ficha-tipos";
 import { EntregarItem } from "@/components/mesa/EntregarItem";
 import { HistoricoAlteracoes } from "@/components/mesa/HistoricoAlteracoes";
 import { TrazerPersonagem } from "@/components/mesa/TrazerPersonagem";
@@ -39,7 +39,7 @@ function Card({
   aoMorrer: () => void;
 }) {
   const [confirmando, setConfirmando] = useState(false);
-  const estado = estadoDe(p.vida);
+  const estado = estadoDe(p.vida, p.vida_max, p.limiar_instavel);
   const porcentagem = Math.max(0, Math.min(100, (p.vida / p.vida_max) * 100));
 
   return (
@@ -77,12 +77,13 @@ function Card({
         </div>
       </div>
 
-      <dl className="grid grid-cols-4 gap-2 text-center">
+      <dl className="grid grid-cols-5 gap-1.5 text-center">
         {[
           { rotulo: "PE", valor: `${p.pe}/${p.pe_max}`, cor: "text-ouro" },
+          { rotulo: "Sinerg.", valor: p.sinergia, cor: "text-mental" },
           { rotulo: "Corrup.", valor: p.corrupcao, cor: "text-corrupcao" },
-          { rotulo: "Defesa", valor: p.defesa, cor: "" },
-          { rotulo: "Congel.", valor: p.congelado, cor: p.congelado > LIMITE_CONGELADO ? "text-congelado" : "" },
+          { rotulo: "Prot.", valor: p.defesa, cor: "" },
+          { rotulo: "Congel.", valor: p.congelado, cor: p.congelado > p.limite_congelado ? "text-congelado" : "" },
         ].map(({ rotulo, valor, cor }) => (
           <div key={rotulo} className="rounded-md bg-secondary/60 py-1">
             <dt className="font-heading text-[0.65rem] tracking-widest text-muted-foreground uppercase">{rotulo}</dt>
@@ -142,10 +143,14 @@ function FeedRolagens({ rolagens, nomes }: { rolagens: Rolagem[]; nomes: Map<str
                 <p className="truncate text-base">
                   <span className="font-bold">{nomes.get(r.personagem_id) ?? "?"}</span>{" "}
                   <span className="uppercase">{r.atributo}</span>{" "}
-                  <span className="text-muted-foreground">≤ {r.alvo}</span>
+                  <span className="text-muted-foreground">{r.dado === "d20" ? "D20" : `≤ ${r.alvo}`}</span>
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  {r.sucesso ? "Sucesso" : "Falha"}
+                  {r.dado === "d20"
+                    ? `${r.resultado}${r.bonus ? ` ${r.bonus > 0 ? "+" : "−"} ${Math.abs(r.bonus)}` : ""} · você julga`
+                    : r.sucesso
+                      ? "Sucesso"
+                      : "Falha"}
                   {r.reforcado && ` · reforçado (${r.dados?.join(" e ")})`}
                   {r.refeitos > 0 && ` · refeito ${r.refeitos}×`}
                 </p>
@@ -366,6 +371,6 @@ export function MesaAoVivo({ campanhaId, inicial }: { campanhaId: string; inicia
 
 // só os campos que o card mostra (o resto da linha não interessa aqui)
 function pick(p: Personagem) {
-  const { nome, vida, vida_max, pe, pe_max, corrupcao, defesa, congelado } = p;
-  return { nome, vida, vida_max, pe, pe_max, corrupcao, defesa, congelado };
+  const { nome, vida, vida_max, pe, pe_max, corrupcao, defesa, congelado, limiar_instavel, limite_congelado, sinergia } = p;
+  return { nome, vida, vida_max, pe, pe_max, corrupcao, defesa, congelado, limiar_instavel, limite_congelado, sinergia };
 }

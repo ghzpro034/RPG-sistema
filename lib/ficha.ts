@@ -15,7 +15,7 @@ export async function carregarFicha(
   if (!personagem) return null;
 
   const [{ data: atributos }, cartas, inventario, gracas, retrato, catalogo] = await Promise.all([
-    supabase.from("atributos").select("id, grupo, nome, valor, ordem").eq("personagem_id", personagemId).order("ordem"),
+    supabase.from("atributos").select("id, grupo, nome, valor, bonus, ordem").eq("personagem_id", personagemId).order("ordem"),
     carregarCartas(supabase, personagemId),
     carregarInventario(supabase, personagemId),
     carregarGracas(supabase, personagemId),

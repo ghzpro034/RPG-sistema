@@ -7,6 +7,9 @@
 > É a referência de regras para o app. **O Compêndio é a fonte oficial (decidido em 18/11):** quando uma ficha ou
 > o verso disser outra coisa, vale o Compêndio. A única exceção decidida é o empate no D100, que conta como sucesso.
 > Pontos marcados com **⚠ em aberto** ainda precisam de confirmação do mestre.
+>
+> **No app (25/11):** a parte de ficha (seções 2 e 4: características, D100/D20, estados, Sinergia, raça) já segue
+> este documento. Cartas, inventário e combate ainda não.
 
 ---
 
