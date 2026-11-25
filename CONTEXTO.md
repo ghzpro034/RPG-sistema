@@ -4,7 +4,7 @@
 > atualize no mesmo commit de qualquer mudança que altere o que está escrito aqui (nova função,
 > migration, decisão de regra, pendência resolvida ou nova).
 >
-> Última atualização: 2026-11-14
+> Última atualização: 2026-11-24
 >
 > Visão completa (histórico, decisões com o porquê, banco, desempenho): [`RELATORIO.md`](RELATORIO.md).
 
@@ -26,7 +26,7 @@ variável de banco `grimorio.rpc` e as configurações em `.claude/launch.json`.
 | Repositório | https://github.com/ghzpro034/RPG-sistema (branch `main`) |
 | Deploy | Vercel, projeto `projetos-fd57/rpg-sistema` — cada push no `main` publica. As funções rodam em São Paulo (`gru1`, no `vercel.json`), perto do banco |
 | Banco, login, imagens, tempo real | Supabase (Postgres + RLS, Auth e-mail/senha, Storage, Realtime) |
-| Keep-alive do Supabase | `.github/workflows/keepalive.yml`, a cada 3 dias (secrets `SUPABASE_URL` e `SUPABASE_PUBLISHABLE_KEY`) |
+| Keep-alive do Supabase | **Vercel Cron diário** (`vercel.json` → `app/api/manter-vivo`) e, de reserva, `.github/workflows/keepalive.yml` a cada 3 dias (secrets `SUPABASE_URL` e `SUPABASE_PUBLISHABLE_KEY`). Os dois chamam a RPC `manter_vivo`, que grava na tabela `batimentos`. Com `CRON_SECRET` na Vercel (já criada), a rota só aceita o cron |
 | Variáveis locais | `.env.local` (fora do git); modelo em `.env.example` |
 
 Segredos nunca entram no repositório nem no front: só a URL e a **publishable key** vão para o navegador.
@@ -66,6 +66,11 @@ A secret key e a senha do Postgres não são usadas pelo app.
 - `scripts/gerar-icones.mjs` — gera os ícones do PWA a partir de `scripts/icone-origem.svg`.
 
 ## Regras do jogo (confirmadas pelo usuário)
+
+> **O sistema mudou (18/11/2026)** e o **Compêndio do Sistema é a fonte oficial**: quando uma ficha antiga disser
+> outra coisa, vale o Compêndio. As regras completas e atuais estão em [`docs/SISTEMA.md`](docs/SISTEMA.md),
+> resumidas do Compêndio do Sistema e das fichas novas. O app ainda segue as regras antigas abaixo; a adaptação
+> está planejada em fases (ver Pendências).
 
 - **D100:** sucesso quando `resultado <= atributo` (empate é sucesso).
 - **Reforçar (−1 PE):** declarado antes de rolar; rola 2 dados e vale o menor.
@@ -114,6 +119,7 @@ O usuário roda cada migration no **SQL Editor do Supabase** antes do push do c�
 | `20261030080000_retratos` | Só o mestre envia retratos | sim |
 | `20261030090000_retratos_passo_a_passo` | Correção das regras de retrato | sim |
 | `20261030100000_limpeza_imagens` | Bucket aceita só WebP até 1 MB; fila e limpeza de imagens sem uso | sim |
+| `20261124000000_manter_vivo` | Tabela `batimentos` e RPC `manter_vivo` (aberta a anon) para o Supabase não pausar | sim |
 
 ## Estado atual
 
@@ -126,12 +132,26 @@ funções da Vercel em São Paulo, imagens guardadas no celular pelo service wor
 
 **Em andamento:** nada.
 
+**Lição (24/11):** o Supabase pausou entre 16 e 19/11 mesmo com o keep-alive antigo, porque a consulta recebia
+"sem permissão" e isso não contou como uso. O batimento precisa ser uma operação que dá certo (hoje, uma escrita).
+`CRON_SECRET` já está criada na Vercel (Production).
+
 **Ainda não testado logado:**
 - A limpeza de imagens (confira se uma imagem trocada some do Storage depois de 1 hora, ao abrir a Mesa como mestre).
 - As imagens guardadas no celular (na segunda abertura da ficha, as imagens aparecem na hora, sem baixar de novo).
 - A ficha e a Mesa mais rápidas com as funções em São Paulo (medir na aba Rede do navegador).
 
 ## Pendências
+
+**Adaptar o app ao sistema novo** (`docs/SISTEMA.md`), em fases:
+- **A — Ficha:** Vigor no lugar de Força, especialização Criar, valor de Vigor/Mental/Social digitado pelo mestre,
+  D100 na característica (empate = sucesso), D20 na especialização (app rola e soma bônus, mestre julga),
+  Ferido abaixo de 50% da vida máxima, limiar de Instável e de congelamento por personagem, estado Morrendo,
+  Sinergia, Proteção, raça, Nível Cósmico. O Compêndio é a fonte oficial (só o empate do D100 conta como sucesso).
+- **B — Cartas:** arquétipos (12, texto do Compêndio), traumas (7, ativar = 5 PE), Caminhos (Amor/Revolta/Absurdo,
+  nível, custo em Sinergia), habilidades únicas; artes das 19 cartas.
+- **C — Inventário:** espaços por raridade, dano/bônus/criador, memórias com nome e efeito, estrelas.
+- **D — Combate na Mesa:** Grupos A e B, tiro D8/D6, dados de dano, Defender, Recuperar Foco.
 
 **Dependem do mestre / da mesa**
 - Símbolo oficial do RPG para o ícone do PWA (trocar `scripts/icone-origem.svg` e rodar `node scripts/gerar-icones.mjs`).
@@ -148,10 +168,12 @@ funções da Vercel em São Paulo, imagens guardadas no celular pelo service wor
 - Testes automatizados dos fluxos principais (login, ficha, D100, mesa).
 
 **Técnicas, sem pressa**
+- Atualizar o Next.js de 16.4.3 para 16.4.6: há 5 avisos de segurança moderados (cache de `use cache`, otimização
+  de imagem, rotas Edge). O build local para com `SecurityFatalError` na primeira vez e passa ao repetir.
 - Tipos gerados do banco (`lib/tipos.ts`) — precisa do token do Supabase CLI.
 - "Esqueci a senha" (hoje o mestre redefine pelo painel do Supabase).
 - Remoção de item ao vivo: o jogador com a ficha aberta só vê ao voltar para a aba ou recarregar.
-- Keep-alive: o GitHub desliga workflows agendados após 60 dias sem commits.
+- Keep-alive do GitHub: ele desliga workflows agendados após 60 dias sem commits (o Vercel Cron não tem esse limite).
 - Opcional: domínio melhor na Vercel (e atualizar a Site URL no Supabase depois).
 
 ## Como o trabalho anda

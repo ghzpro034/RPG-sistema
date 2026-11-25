@@ -1,6 +1,7 @@
-# Evita que o Supabase grátis pause depois de 7 dias sem uso.
+# Evita que o Supabase grátis pause depois de 7 dias sem uso. É a reserva: o batimento principal é o
+# Vercel Cron diário (app/api/manter-vivo). Os dois chamam a função manter_vivo, que faz uma escrita de verdade.
+# (A consulta antiga só recebia "sem permissão" e não contou como uso: o projeto pausou em novembro.)
 # Precisa dos secrets SUPABASE_URL e SUPABASE_PUBLISHABLE_KEY (Settings → Secrets and variables → Actions).
-# A resposta é "sem permissão" (quem não está logado não lê nada), mas a consulta chega no banco e conta como uso.
 name: keepalive
 on:
   schedule:
@@ -26,9 +27,11 @@ jobs:
             https://*) ;;
             *) echo "::error::SUPABASE_URL precisa começar com https:// (ex.: https://xxxx.supabase.co)"; exit 1 ;;
           esac
-          codigo=$(curl -sS -o /dev/null -w "%{http_code}" \
-            "$url/rest/v1/campanhas?select=id&limit=1" \
-            -H "apikey: $chave")
+          codigo=$(curl -sS -o /dev/null -w "%{http_code}" -X POST \
+            "$url/rest/v1/rpc/manter_vivo" \
+            -H "apikey: $chave" -H "Content-Type: application/json" \
+            -d '{"p_origem":"github"}' || echo 000)
           echo "Supabase respondeu $codigo"
-          # 5xx ou sem resposta: o projeto pode estar pausado
-          test "$codigo" -lt 500
+          if [ "$codigo" -ge 200 ] && [ "$codigo" -lt 300 ]; then exit 0; fi
+          echo "::error::O batimento não funcionou ($codigo). Se for 000 ou 5xx, o projeto pode estar pausado: restaure em supabase.com/dashboard."
+          exit 1
