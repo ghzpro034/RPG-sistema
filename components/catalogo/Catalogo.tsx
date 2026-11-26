@@ -288,7 +288,7 @@ export function Catalogo({
         </TabsList>
 
         <TabsContent value="itens" className="flex flex-col gap-3">
-          <Button size="lg" className="self-start font-heading tracking-wider" onClick={() => abrir({ tipo: "item", valor: null })}>
+          <Button size="lg" className="self-start font-heading" onClick={() => abrir({ tipo: "item", valor: null })}>
             <Plus /> Novo item
           </Button>
           {itens.length ? (
@@ -299,7 +299,7 @@ export function Catalogo({
                   <li key={i.id} className="flex items-center gap-3 rounded-xl border border-border bg-card p-3">
                     <Miniatura url={i.imagemUrl} className="size-16" />
                     <div className="min-w-0 flex-1">
-                      <p className={cn("truncate font-heading text-base font-bold uppercase", raridade?.cor)}>{i.nome}</p>
+                      <p className={cn("truncate font-rotulo text-base font-bold uppercase", raridade?.cor)}>{i.nome}</p>
                       <p className="truncate text-base text-muted-foreground">
                         {raridade?.rotulo}
                         {i.efeito && ` · ${i.efeito}`}
@@ -320,7 +320,7 @@ export function Catalogo({
         </TabsContent>
 
         <TabsContent value="cartas" className="flex flex-col gap-3">
-          <Button size="lg" className="self-start font-heading tracking-wider" onClick={() => abrir({ tipo: "carta", valor: null })}>
+          <Button size="lg" className="self-start font-heading" onClick={() => abrir({ tipo: "carta", valor: null })}>
             <Plus /> Nova carta
           </Button>
           {cartas.length ? (
@@ -332,12 +332,12 @@ export function Catalogo({
                   <li key={c.id} className="flex items-center gap-3 rounded-xl border border-border bg-card p-3">
                     <Miniatura url={c.imagemUrl} className="h-16 w-12" />
                     <div className="min-w-0 flex-1">
-                      <p className={cn("font-heading text-xs tracking-[0.2em] uppercase", tipo?.cor)}>
+                      <p className={cn("font-rotulo text-xs tracking-[0.2em] uppercase", tipo?.cor)}>
                         {c.tipo === "caminho" && c.caminho ? `${tipo?.rotulo} · ${nomeDoCaminho(c.caminho)}` : tipo?.rotulo}
                         {c.nivel && ` ${c.nivel}`}
                         {custo && <span className="text-muted-foreground"> · {custo}</span>}
                       </p>
-                      <p className="truncate font-heading text-base font-bold uppercase">{c.nome}</p>
+                      <p className="truncate font-rotulo text-base font-bold uppercase">{c.nome}</p>
                       {c.citacao && <p className="truncate text-base text-muted-foreground italic">“{c.citacao}”</p>}
                     </div>
                     <Button variant="ghost" size="icon-lg" aria-label={`Editar ${c.nome}`} onClick={() => abrir({ tipo: "carta", valor: c })}>
@@ -398,7 +398,7 @@ export function Catalogo({
                 <CamposCarta carta={edicao.valor} />
               )}
               <CampoImagem atual={edicao.valor?.imagemUrl ?? null} aoEscolher={setImagem} />
-              <Button type="submit" size="lg" disabled={salvando} className="font-heading tracking-wider">
+              <Button type="submit" size="lg" disabled={salvando} className="font-heading">
                 {salvando ? "Salvando…" : "Salvar"}
               </Button>
             </form>

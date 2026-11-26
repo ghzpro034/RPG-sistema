@@ -18,7 +18,7 @@ const LEGENDA: { estado: Estado; limite: (p: Personagem) => string }[] = [
 
 function Rotulo({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
-    <span className={cn("font-heading text-xs tracking-[0.25em] uppercase", className)}>{children}</span>
+    <span className={cn("font-rotulo text-xs tracking-[0.25em] uppercase", className)}>{children}</span>
   );
 }
 
@@ -85,7 +85,7 @@ export function Vitais() {
                   {congelado}
                 </span>
               )}
-              <span className={cn("font-heading text-lg tracking-wider", corDoEstado[estado])}>{estado}</span>
+              <span className={cn("font-heading text-lg", corDoEstado[estado])}>{estado}</span>
             </div>
           </div>
         </div>
@@ -172,7 +172,7 @@ export function Vitais() {
             )}
           </div>
           {congelou && (
-            <span className="font-heading text-sm font-bold tracking-wider text-congelado uppercase">
+            <span className="font-rotulo text-sm font-bold tracking-wider text-congelado uppercase">
               Congelou no frio!
             </span>
           )}

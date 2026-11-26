@@ -21,7 +21,7 @@ export async function Companheiros({ campanhaId }: { campanhaId: string }) {
 export function ListaCompanheiros({ colegas }: { colegas: (Colega & { url: string | null })[] }) {
   return (
     <section aria-labelledby="companheiros" className="flex flex-col gap-2">
-      <h2 id="companheiros" className="font-heading text-xs tracking-[0.25em] text-muted-foreground uppercase">
+      <h2 id="companheiros" className="font-rotulo text-xs tracking-[0.25em] text-muted-foreground uppercase">
         Companheiros de mesa
       </h2>
       <ul className="-mx-4 flex gap-4 overflow-x-auto px-4 pb-1 [scrollbar-width:none]">
@@ -32,12 +32,12 @@ export function ListaCompanheiros({ colegas }: { colegas: (Colega & { url: strin
                 // eslint-disable-next-line @next/next/no-img-element -- URL assinada do Supabase
                 <img src={c.url} alt="" className="size-full object-cover" />
               ) : (
-                <span className="flex size-full items-center justify-center font-heading text-2xl text-white/25">
+                <span className="flex size-full items-center justify-center font-rotulo text-2xl text-white/25">
                   {c.nome.charAt(0)}
                 </span>
               )}
             </div>
-            <span className="w-full truncate font-heading text-xs font-bold tracking-wide uppercase">{c.nome}</span>
+            <span className="w-full truncate font-rotulo text-xs font-bold tracking-wide uppercase">{c.nome}</span>
             <span className="-mt-1 w-full truncate text-sm text-muted-foreground">{c.jogador}</span>
           </li>
         ))}

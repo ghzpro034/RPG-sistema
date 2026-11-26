@@ -199,15 +199,15 @@ export function PainelResultado() {
               <div className="flex flex-col items-center">
                 <Resultado rolagem={ultima} className={cn("text-5xl", rolando && "opacity-40")} />
                 {ultima.dado === "d20" ? (
-                  <span className="font-heading text-sm tracking-widest text-ouro uppercase">D20</span>
+                  <span className="font-rotulo text-sm tracking-widest text-ouro uppercase">D20</span>
                 ) : (
-                  <span className={cn("font-heading text-sm tracking-widest uppercase", ultima.sucesso ? "text-estavel" : "text-instavel")}>
+                  <span className={cn("font-rotulo text-sm tracking-widest uppercase", ultima.sucesso ? "text-estavel" : "text-instavel")}>
                     {ultima.sucesso ? "Sucesso" : "Falha"}
                   </span>
                 )}
               </div>
               <div className="min-w-0 flex-1 text-base">
-                <p className="font-heading text-lg tracking-wide uppercase">
+                <p className="font-rotulo text-lg tracking-wide uppercase">
                   {ultima.atributo}{" "}
                   {ultima.dado === "d100" && <span className="text-muted-foreground">≤ {ultima.alvo}</span>}
                 </p>
@@ -247,7 +247,7 @@ export function UltimasRolagens() {
   if (!historico.length) return null;
   return (
     <div className="flex flex-col gap-2">
-      <h3 className="font-heading text-xs tracking-[0.25em] text-muted-foreground uppercase">Últimas rolagens</h3>
+      <h3 className="font-rotulo text-xs tracking-[0.25em] text-muted-foreground uppercase">Últimas rolagens</h3>
       <ul className="flex flex-wrap gap-2">
         {historico.map((r) => (
           <li key={r.id} className="flex items-center gap-2 rounded-full border border-border px-3 py-0.5 text-base">

@@ -19,7 +19,7 @@ async function ConteudoCatalogo() {
 export default function CatalogoPage() {
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-3xl font-bold tracking-wide uppercase">Catálogo</h1>
+      <h1 className="text-3xl font-bold">Catálogo</h1>
       <Suspense fallback={<EsqueletoLista rotulo="Carregando o catálogo…" />}>
         <ConteudoCatalogo />
       </Suspense>

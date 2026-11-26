@@ -195,7 +195,7 @@ export function Baralho({
     <div className="flex flex-col gap-5">
       {souMestre && <DarCarta personagemId={personagemId} disponiveis={disponiveis} aoMudar={aoMudar} />}
       {tipos.includes("arquetipo") && arquetipos > 0 && (
-        <p className="font-heading text-xs tracking-[0.2em] text-muted-foreground uppercase">
+        <p className="font-rotulo text-xs tracking-[0.2em] text-muted-foreground uppercase">
           Arquétipos {arquetipos}/{MAX_ARQUETIPOS}
         </p>
       )}
@@ -216,12 +216,12 @@ export function Baralho({
                     // eslint-disable-next-line @next/next/no-img-element -- URL assinada do Supabase ou arte embutida
                     <img src={c.imagemUrl} alt="" className="size-full object-cover" />
                   ) : (
-                    <span className="mb-2 px-1 text-center font-heading text-[0.65rem] tracking-wider uppercase">{c.nome}</span>
+                    <span className="mb-2 px-1 text-center font-rotulo text-[0.65rem] tracking-wider uppercase">{c.nome}</span>
                   )}
                 </div>
                 <div className="flex min-w-0 flex-1 flex-col gap-2">
                   <div className="flex items-start justify-between gap-2">
-                    <span className="font-heading text-xs tracking-[0.2em] text-muted-foreground uppercase">
+                    <span className="font-rotulo text-xs tracking-[0.2em] text-muted-foreground uppercase">
                       {rotuloDaCarta(c)}
                     </span>
                     {souMestre && (
@@ -230,7 +230,7 @@ export function Baralho({
                       </Button>
                     )}
                   </div>
-                  <h3 className={cn("text-xl font-bold tracking-wide uppercase", estilo.titulo)}>{c.nome}</h3>
+                  <h3 className={cn("text-xl font-bold", estilo.titulo)}>{c.nome}</h3>
                   {c.citacao && <p className="text-lg italic">“{c.citacao}”</p>}
                   {c.efeitos.length > 0 && (
                     <ul className={cn("list-disc pl-5 text-lg leading-snug", estilo.texto, estilo.marcador)}>
@@ -241,7 +241,7 @@ export function Baralho({
                   )}
                   {c.custo && (
                     <p className="text-base text-muted-foreground">
-                      Custo: <span className="font-heading text-ouro uppercase">{c.custo}</span>
+                      Custo: <span className="font-heading text-ouro">{c.custo}</span>
                     </p>
                   )}
                   {temCusto && !morto && <UsarCarta carta={c} campanhaAtual={campanhaAtual} />}

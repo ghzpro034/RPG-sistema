@@ -63,15 +63,15 @@ export function Cabecalho({ retratoInicial, cartas }: { retratoInicial: string |
             // eslint-disable-next-line @next/next/no-img-element -- URL assinada do Supabase, já comprimida
             <img src={retratoUrl} alt={`Retrato de ${p.nome}`} className="size-full object-cover" />
           ) : (
-            <span className="flex size-full items-center justify-center font-heading text-5xl text-white/20 sm:text-6xl">
+            <span className="flex size-full items-center justify-center font-rotulo text-5xl text-white/20 sm:text-6xl">
               {p.nome.charAt(0)}
             </span>
           )}
         </div>
 
-        {/* medalhão do nível */}
+        {/* medalhão do nível: o selo serrilhado da ficha do Canva */}
         <div
-          className="absolute -top-1 -right-3 flex size-11 items-center justify-center rounded-full border-4 border-double border-white/60 bg-secondary font-heading text-xl font-bold sm:size-14 sm:text-2xl"
+          className="absolute -top-1 -right-3 flex size-11 items-center justify-center rounded-full border-[3px] border-dashed border-white/60 bg-secondary font-sans text-xl font-bold shadow-[inset_0_0_0_2px_var(--secondary),inset_0_0_0_3px_rgba(255,255,255,0.45)] sm:size-14 sm:text-2xl"
           aria-label={`Nível Cósmico ${p.nivel ?? ""}`}
         >
           {editando ? (
@@ -80,7 +80,7 @@ export function Cabecalho({ retratoInicial, cartas }: { retratoInicial: string |
               aoSalvar={(nivel) => salvar({ nivel })}
               editavel
               rotulo="Nível Cósmico"
-              campoClassName="h-9 w-10 border-0 bg-transparent px-0 text-center font-heading text-lg font-bold"
+              campoClassName="h-9 w-10 border-0 bg-transparent px-0 text-center font-sans text-lg font-bold"
             />
           ) : (
             p.nivel
@@ -136,7 +136,7 @@ export function Cabecalho({ retratoInicial, cartas }: { retratoInicial: string |
               campoClassName="mt-1 h-12 font-heading text-xl md:text-2xl"
             />
           ) : (
-            <h1 className="text-2xl leading-tight font-bold tracking-wide break-words uppercase sm:text-4xl">{p.nome}</h1>
+            <h1 className="text-2xl leading-tight font-bold break-words sm:text-4xl">{p.nome}</h1>
           )}
           {/* raça: só o mestre escolhe */}
           {editando && souMestre ? (
@@ -155,14 +155,14 @@ export function Cabecalho({ retratoInicial, cartas }: { retratoInicial: string |
             </select>
           ) : (
             p.raca && (
-              <p className="font-heading text-sm tracking-[0.2em] text-muted-foreground uppercase">
+              <p className="font-rotulo text-sm tracking-[0.2em] text-muted-foreground uppercase">
                 {RACAS.find((r) => r.valor === p.raca)?.nome}
               </p>
             )
           )}
         </div>
 
-        <div className="flex flex-col gap-0.5 font-heading text-sm font-bold tracking-wide uppercase sm:text-base">
+        <div className="flex flex-col gap-0.5 font-rotulo text-sm font-bold tracking-wide uppercase sm:text-base">
           {/* o Caminho se aprende com quem já o tem: só o mestre escolhe */}
           {editando && souMestre ? (
             <select

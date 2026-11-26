@@ -42,7 +42,7 @@ async function Conteudo() {
               placeholder="K7Q2ZX"
               autoCapitalize="characters"
               maxLength={6}
-              className="h-10 font-heading text-lg tracking-[0.3em] uppercase md:text-lg"
+              className="h-10 font-rotulo text-lg tracking-[0.3em] uppercase md:text-lg"
               required
             />
           </Formulario>

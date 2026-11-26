@@ -1,14 +1,22 @@
 import type { Metadata, Viewport } from "next";
-import { Cinzel, Cormorant_Garamond } from "next/font/google";
+import { Belleza, Cormorant_Garamond, Grenze_Gotisch } from "next/font/google";
 import { RegistrarServiceWorker } from "@/components/RegistrarServiceWorker";
 import { SemInternet } from "@/components/SemInternet";
 import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
-// Cinzel: títulos e números da ficha
-const cinzel = Cinzel({
-  variable: "--font-cinzel",
+// Grenze Gotisch: a serifa condensada de gravura das cartas ("O Explorador") e da ficha física (títulos, nomes, números)
+const grenze = Grenze_Gotisch({
+  variable: "--font-grenze",
   subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+});
+
+// Belleza: a sans dos rótulos ("TRAUMA", "FORÇA", "MENOS DE")
+const belleza = Belleza({
+  variable: "--font-belleza",
+  subsets: ["latin"],
+  weight: "400",
 });
 
 // Cormorant Garamond: texto corrido
@@ -35,7 +43,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="pt-BR"
-      className={`${cinzel.variable} ${cormorant.variable} dark h-full antialiased`}
+      className={`${grenze.variable} ${belleza.variable} ${cormorant.variable} dark h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         <SemInternet />

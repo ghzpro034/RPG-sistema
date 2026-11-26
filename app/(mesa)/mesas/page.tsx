@@ -38,7 +38,7 @@ async function Mesas() {
                         <Users className="size-5 shrink-0 text-muted-foreground" aria-label="Player" />
                       )}
                       <span className="min-w-0 flex-1">
-                        <span className="block truncate font-heading text-lg font-bold uppercase">{m.nome}</span>
+                        <span className="block truncate font-rotulo text-lg font-bold uppercase">{m.nome}</span>
                         <span className="text-base text-muted-foreground">
                           {m.papel === "mestre" ? `Você mestra · código ${m.codigo_convite}` : "Você joga"}
                         </span>
@@ -78,7 +78,7 @@ async function Mesas() {
               placeholder="K7Q2ZX"
               autoCapitalize="characters"
               maxLength={6}
-              className="h-10 font-heading text-lg tracking-[0.3em] uppercase md:text-lg"
+              className="h-10 font-rotulo text-lg tracking-[0.3em] uppercase md:text-lg"
               required
             />
           </Formulario>
@@ -91,7 +91,7 @@ async function Mesas() {
 export default function MesasPage() {
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-3xl font-bold tracking-wide uppercase">Mesas</h1>
+      <h1 className="text-3xl font-bold">Mesas</h1>
       <Suspense fallback={<EsqueletoLista rotulo="Carregando as mesas…" />}>
         <Mesas />
       </Suspense>

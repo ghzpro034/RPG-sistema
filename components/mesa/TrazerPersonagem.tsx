@@ -47,7 +47,7 @@ export function TrazerPersonagem({ campanhaId, disponiveis }: { campanhaId: stri
               </option>
             ))}
           </select>
-          <Button size="lg" disabled={!escolhido || enviando} onClick={trazer} className="font-heading tracking-wider">
+          <Button size="lg" disabled={!escolhido || enviando} onClick={trazer} className="font-heading">
             {enviando ? "Trazendo…" : "Trazer para a mesa"}
           </Button>
           <p className="text-sm text-muted-foreground">A ficha é a mesma: continua valendo na mesa de onde veio.</p>

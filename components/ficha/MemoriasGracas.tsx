@@ -106,7 +106,7 @@ function Memorias({
               ) : (
                 forma
               )}
-              <span className={cn("font-heading text-base tracking-wider uppercase", !aberta && "text-muted-foreground/60")}>
+              <span className={cn("font-rotulo text-base tracking-wider uppercase", !aberta && "text-muted-foreground/60")}>
                 Memória {ROMANOS[n]}
                 {!aberta && " · bloqueada"}
               </span>
@@ -247,7 +247,7 @@ export function MemoriasGracas({
                     <>
                       {graca ? (
                         <>
-                          <p className={cn("font-heading text-base font-bold uppercase", cor)}>{graca.nome ?? rotulo}</p>
+                          <p className={cn("font-rotulo text-base font-bold uppercase", cor)}>{graca.nome ?? rotulo}</p>
                           {graca.descricao && <p className="text-base leading-snug">{graca.descricao}</p>}
                         </>
                       ) : (

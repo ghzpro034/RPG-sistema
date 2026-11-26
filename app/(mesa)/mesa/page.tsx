@@ -18,10 +18,10 @@ async function Painel() {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-end justify-between gap-3">
-        <h1 className="text-3xl font-bold tracking-wide uppercase">{sessao.campanha.nome}</h1>
+        <h1 className="text-3xl font-bold">{sessao.campanha.nome}</h1>
         <p className="text-lg text-muted-foreground">
           Código de convite:{" "}
-          <span className="font-heading text-xl tracking-[0.3em] text-ouro">{sessao.campanha.codigo_convite}</span>
+          <span className="font-heading text-xl text-ouro">{sessao.campanha.codigo_convite}</span>
         </p>
       </div>
       <MesaAoVivo key={chave} campanhaId={sessao.campanha.id} inicial={dados} />

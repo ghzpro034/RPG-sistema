@@ -93,7 +93,7 @@ export function Inventario({ inicial }: { inicial: ItemInventario[] }) {
           <span className="flex size-10 items-center justify-center rounded-full border-2 border-white/70 bg-black">
             <Dente className="size-6" />
           </span>
-          <span className="pr-3 font-heading text-xs tracking-[0.2em] text-muted-foreground uppercase">Dentes</span>
+          <span className="pr-3 font-rotulo text-xs tracking-[0.2em] text-muted-foreground uppercase">Dentes</span>
         </div>
       </div>
       <ul className="grid gap-3 sm:grid-cols-2">
@@ -171,7 +171,7 @@ export function Inventario({ inicial }: { inicial: ItemInventario[] }) {
       </ul>
       <ul className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 pt-2" aria-label="Raridades">
         {Object.values(RARIDADE).map(({ rotulo, texto, fundo }) => (
-          <li key={rotulo} className={cn("flex items-center gap-2 font-heading text-sm tracking-[0.2em] uppercase", texto)}>
+          <li key={rotulo} className={cn("flex items-center gap-2 font-rotulo text-sm tracking-[0.2em] uppercase", texto)}>
             <span className={cn("size-5 rounded-full", fundo)} aria-hidden />
             {rotulo}
           </li>

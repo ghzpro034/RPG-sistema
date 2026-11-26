@@ -64,7 +64,7 @@ export function DicaInstalar() {
       {/* eslint-disable-next-line @next/next/no-img-element -- ícone estático do app */}
       <img src="/icones/icone-192.png" alt="" className="size-11 shrink-0 rounded-lg" />
       <div className="min-w-0 flex-1 text-base leading-snug">
-        <p className="font-heading text-sm tracking-wider text-ouro uppercase">Instale no celular</p>
+        <p className="font-rotulo text-sm tracking-wider text-ouro uppercase">Instale no celular</p>
         {iphone ? (
           <p>
             No Safari, toque em <Share className="inline size-4 -translate-y-0.5" aria-label="Compartilhar" /> e depois

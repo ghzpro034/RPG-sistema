@@ -50,13 +50,13 @@ function Card({
             // eslint-disable-next-line @next/next/no-img-element -- URL assinada do Supabase
             <img src={p.retratoUrl} alt="" className="size-full object-cover" />
           ) : (
-            <span className="flex size-full items-center justify-center font-heading text-2xl text-white/25">
+            <span className="flex size-full items-center justify-center font-rotulo text-2xl text-white/25">
               {p.nome.charAt(0)}
             </span>
           )}
         </div>
         <div className="min-w-0 flex-1">
-          <h3 className="truncate text-xl font-bold tracking-wide uppercase">{p.nome}</h3>
+          <h3 className="truncate text-xl font-bold">{p.nome}</h3>
           <p className="truncate text-base text-muted-foreground">{p.jogador}</p>
         </div>
         <span className={cn("font-heading text-base", corDoEstado[estado])}>{estado}</span>
@@ -86,7 +86,7 @@ function Card({
           { rotulo: "Congel.", valor: p.congelado, cor: p.congelado > p.limite_congelado ? "text-congelado" : "" },
         ].map(({ rotulo, valor, cor }) => (
           <div key={rotulo} className="rounded-md bg-secondary/60 py-1">
-            <dt className="font-heading text-[0.65rem] tracking-widest text-muted-foreground uppercase">{rotulo}</dt>
+            <dt className="font-rotulo text-[0.65rem] tracking-widest text-muted-foreground uppercase">{rotulo}</dt>
             <dd className={cn("font-heading text-lg tabular-nums", cor)}>{valor}</dd>
           </div>
         ))}
@@ -420,7 +420,7 @@ export function MesaAoVivo({ campanhaId, inicial }: { campanhaId: string; inicia
               placeholder="Epitáfio (opcional): como foi o fim?"
               className="min-h-20 text-lg md:text-lg"
             />
-            <Button type="submit" variant="destructive" size="lg" disabled={registrando} className="font-heading tracking-wider">
+            <Button type="submit" variant="destructive" size="lg" disabled={registrando} className="font-heading">
               {registrando ? "Registrando…" : "Registrar a morte"}
             </Button>
           </form>

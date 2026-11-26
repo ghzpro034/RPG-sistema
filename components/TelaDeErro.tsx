@@ -20,7 +20,7 @@ export function TelaDeErro({ error, retry }: { error: unknown; retry: () => void
   return (
     <div role="alert" className="mx-auto flex w-full max-w-md flex-col items-center gap-4 py-12 text-center">
       <Icone aria-hidden className="size-12 text-destructive" />
-      <h1 className="font-heading text-xl tracking-[0.15em] uppercase">
+      <h1 className="font-heading text-xl">
         {online ? "Algo deu errado" : "Sem internet"}
       </h1>
       <p className="text-lg leading-snug text-muted-foreground">
@@ -29,7 +29,7 @@ export function TelaDeErro({ error, retry }: { error: unknown; retry: () => void
           : "O celular está sem conexão. Quando a internet voltar, toque em tentar de novo."}
       </p>
       <div className="flex flex-wrap justify-center gap-3">
-        <Button size="lg" className="h-11 font-heading tracking-wider" onClick={() => retry()}>
+        <Button size="lg" className="h-11 font-heading" onClick={() => retry()}>
           <RotateCcw /> Tentar de novo
         </Button>
         <Link href="/" className={buttonVariants({ variant: "outline", size: "lg", className: "h-11" })}>

@@ -39,7 +39,14 @@ A secret key e a senha do Postgres não são usadas pelo app.
   `params`/`searchParams` são Promises; páginas que leem cookies ficam dentro de `<Suspense>`.
 - **React 19** com React Compiler (evite `useMemo` desnecessário; hooks nunca depois de `return` condicional).
 - **Tailwind 4 + shadcn/ui** (`base-nova`, sobre `@base-ui/react`). `cn` vem do pacote `cn`.
-- Fontes Cinzel (títulos) e Cormorant Garamond (texto). Fundo preto puro; cores da ficha do Canva.
+- **Estética das cartas e da ficha física (26/11):** fundo preto com um grão de papel bem fraco (`body::before` em
+  `globals.css`); títulos em **Grenze Gotisch** (`font-heading`, a serifa condensada de gravura das cartas e da ficha
+  física, em caixa normal, sem `uppercase`/`tracking`); rótulos pequenos em maiúsculas em **Belleza** (`font-rotulo`,
+  como "TRAUMA" e "FORÇA"); texto em Cormorant Garamond. Iniciais soltas e numerais romanos **não** usam a Grenze
+  (o "I" gótico parece um "D"): iniciais em `font-rotulo`, nível em `font-sans`. Cores da ficha do Canva.
+- **Sigilo** (`components/Sigilo.tsx`): o símbolo das cartas, em SVG com `currentColor`; aparece no login, no topo e
+  é o ícone do PWA (`scripts/icone-origem.svg`). `Divisor` é o "— ✤ —" entre seções; `Cantoneiras` são os cantos de
+  gravura da ficha física; a utility `moldura-carta` faz a borda dupla das cartas.
 - Interface, código (nomes de funções e variáveis) e comentários **em português**.
 - **Regras e permissões ficam no banco** (RLS, RPC, trigger), nunca só no front.
 
@@ -53,6 +60,7 @@ A secret key e a senha do Postgres não são usadas pelo app.
   `Conhecimento`, `EnganarMorte`, `MemoriasGracas`, `Travas`, `Companheiros`), `contexto.tsx`
   (salvar/sincronizar a ficha) e `rolador.tsx` (D100, Reforçar/Refazer, últimas rolagens).
 - `components/mesa/` — `MesaAoVivo`, `EntregarItem`, `HistoricoAlteracoes`, `TrazerPersonagem`, `Memorial`.
+- `components/Sigilo.tsx`, `Divisor.tsx`, `Cantoneiras.tsx` — o símbolo do RPG, o ornamento entre seções e os cantos de gravura.
 - `components/Estados.tsx` — esqueletos de carregamento (`EsqueletoFicha`, `EsqueletoMesa`, `EsqueletoLista`,
   `CarregandoTela`), `Vazio` (lista vazia) e `NaoEncontrado`. `TelaDeErro.tsx` (usada pelos `error.tsx`),
   `SemInternet.tsx` (faixa vermelha quando o aparelho fica offline) e `BotaoSair.tsx`.
@@ -119,7 +127,7 @@ A secret key e a senha do Postgres não são usadas pelo app.
   Nas políticas do Storage, leia o caminho com `string_to_array` (como `retrato_personagem()`), não com
   `storage.foldername()` dentro de funções — isso já causou erro de RLS.
 - **Gastar PE** só por RPC (`security definer` + `set_config('grimorio.rpc','on',true)`), por causa do trigger de travas.
-- **PWA:** instalável no celular; o ícone atual é **provisório** (engrenagem dourada).
+- **PWA:** instalável no celular; o ícone é o sigilo dourado das cartas (gerado por `scripts/gerar-icones.mjs`).
 
 ## Migrations
 
@@ -156,7 +164,8 @@ especializações e Criar entrou com 0 — **o mestre precisa conferir e ajustar
 as 19 cartas do Compêndio com arte no catálogo de cada mestre, custos em PE/Sinergia com o botão Usar e aviso na
 Mesa, limites do baralho e Caminho da ficha escolhido pelo mestre.
 
-**Em andamento:** nada. Próxima: Fase C (inventário).
+**Em andamento:** visual novo (fontes, sigilo, molduras) pronto e conferido no navegador em celular e desktop; falta commit e push.
+Depois: Fase C (inventário).
 
 **Lição (24/11):** o Supabase pausou entre 16 e 19/11 mesmo com o keep-alive antigo, porque a consulta recebia
 "sem permissão" e isso não contou como uso. O batimento precisa ser uma operação que dá certo (hoje, uma escrita).
@@ -183,7 +192,8 @@ deploy da Vercel falhou. Atualizado para 16.4.6. Se um deploy falhar do nada, ro
 - **D — Combate na Mesa:** Grupos A e B, tiro D8/D6, dados de dano, Defender, Recuperar Foco.
 
 **Dependem do mestre / da mesa**
-- Símbolo oficial do RPG para o ícone do PWA (trocar `scripts/icone-origem.svg` e rodar `node scripts/gerar-icones.mjs`).
+- Se o RPG tiver um símbolo oficial diferente do sigilo das cartas: trocar `scripts/icone-origem.svg` e `components/Sigilo.tsx`
+  e rodar `node scripts/gerar-icones.mjs`.
 - Artes: retratos, imagens dos itens e das cartas que não são do Compêndio (o mestre sobe pelo Catálogo e por "Trocar foto").
 - Cadastro do Ivan: cartas Agraciado (habilidade única) e Incerteza Biológica (Caminho da Revolta, I, 1 Sinergia);
   itens Arma de Pressão e Ossos Pequenos. O Cuidador, O Órfão e Abandono já vêm do Compêndio.

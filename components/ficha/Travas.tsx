@@ -18,7 +18,7 @@ export function Travas() {
 
   return (
     <section className="flex flex-col gap-3 rounded-xl border border-ouro/30 bg-ouro/5 p-4">
-      <h2 className="flex items-center gap-2 font-heading text-sm tracking-[0.2em] text-ouro uppercase">
+      <h2 className="flex items-center gap-2 font-rotulo text-sm tracking-[0.2em] text-ouro uppercase">
         <Lock className="size-4" /> Travas do mestre
       </h2>
       <div className="flex flex-wrap gap-x-6 gap-y-3">

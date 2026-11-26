@@ -13,7 +13,7 @@ function Bloco({ className }: { className?: string }) {
 function Carregando({ rotulo, className, children }: { rotulo: string; className?: string; children: React.ReactNode }) {
   return (
     <div role="status" aria-live="polite" className={cn("flex flex-col gap-6", className)}>
-      <p className="font-heading text-xs tracking-[0.3em] text-ouro/80 uppercase">{rotulo}</p>
+      <p className="font-rotulo text-xs tracking-[0.3em] text-ouro/80 uppercase">{rotulo}</p>
       <div aria-hidden className="contents">
         {children}
       </div>
@@ -77,7 +77,7 @@ export function CarregandoTela() {
   return (
     <p
       role="status"
-      className="m-auto font-heading text-xs tracking-[0.3em] text-ouro/80 uppercase motion-safe:animate-pulse"
+      className="m-auto font-rotulo text-xs tracking-[0.3em] text-ouro/80 uppercase motion-safe:animate-pulse"
     >
       Carregando…
     </p>
@@ -104,11 +104,11 @@ export function NaoEncontrado() {
   return (
     <div className="mx-auto flex w-full max-w-md flex-col items-center gap-4 py-12 text-center">
       <Compass aria-hidden className="size-12 text-ouro/80" />
-      <h1 className="font-heading text-xl tracking-[0.15em] uppercase">Nada por aqui</h1>
+      <h1 className="font-heading text-xl">Nada por aqui</h1>
       <p className="text-lg leading-snug text-muted-foreground">
         Esta página não existe, ou a ficha não está em nenhuma mesa sua.
       </p>
-      <Link href="/" className={buttonVariants({ size: "lg", className: "h-11 font-heading tracking-wider" })}>
+      <Link href="/" className={buttonVariants({ size: "lg", className: "h-11 font-heading" })}>
         Voltar ao início
       </Link>
     </div>
@@ -138,7 +138,7 @@ export function Vazio({
       )}
     >
       {Icone && <Icone aria-hidden className={cn("text-ouro/70", compacto ? "size-6" : "size-9")} />}
-      <p className="font-heading text-sm tracking-[0.2em] text-ouro uppercase">{titulo}</p>
+      <p className="font-rotulo text-sm tracking-[0.2em] text-ouro uppercase">{titulo}</p>
       {children && <p className="max-w-sm text-lg leading-snug text-muted-foreground">{children}</p>}
     </div>
   );

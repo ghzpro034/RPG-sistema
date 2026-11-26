@@ -38,7 +38,7 @@ export function Memorial({ falecidos }: { falecidos: Falecido[] }) {
                 // eslint-disable-next-line @next/next/no-img-element -- URL assinada do Supabase
                 <img src={f.retratoUrl} alt="" className="size-full object-cover" />
               ) : (
-                <span className="flex size-full items-center justify-center font-heading text-2xl text-white/20">
+                <span className="flex size-full items-center justify-center font-rotulo text-2xl text-white/20">
                   {f.nome.charAt(0)}
                 </span>
               )}

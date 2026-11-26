@@ -165,7 +165,7 @@ export function Atributos({ inicial }: { inicial: Atributo[] }) {
                   aoSalvar={(t) => salvarCaracteristica(grupo, t)}
                   className="h-11 w-18 text-xl md:text-xl"
                 />
-                <span className={cn("font-heading text-lg tracking-[0.2em] uppercase", texto)}>{titulo}</span>
+                <span className={cn("font-rotulo text-lg tracking-[0.2em] uppercase", texto)}>{titulo}</span>
               </div>
             ) : (
               <button
@@ -185,8 +185,8 @@ export function Atributos({ inicial }: { inicial: Atributo[] }) {
                 >
                   {personagem[grupo]}
                 </span>
-                <span className={cn("font-heading text-lg tracking-[0.2em] uppercase", texto)}>{titulo}</span>
-                <span className="ml-auto font-heading text-xs tracking-widest text-muted-foreground">D100</span>
+                <span className={cn("font-rotulo text-lg tracking-[0.2em] uppercase", texto)}>{titulo}</span>
+                <span className="ml-auto font-heading text-xs text-muted-foreground">D100</span>
               </button>
             )}
 
@@ -200,7 +200,7 @@ export function Atributos({ inicial }: { inicial: Atributo[] }) {
                     {podeEditar ? (
                       <div className="flex min-h-10 items-center gap-2">
                         <CampoNumero valor={a.valor} rotulo={a.nome} aoSalvar={(t) => salvarEspecializacao(a.id, "valor", t)} />
-                        <span className="min-w-0 flex-1 truncate font-heading text-base tracking-wide uppercase">{a.nome}</span>
+                        <span className="min-w-0 flex-1 truncate font-rotulo text-base tracking-wide uppercase">{a.nome}</span>
                         <label className="flex shrink-0 items-center gap-1 text-sm text-muted-foreground">
                           bônus
                           <CampoNumero
@@ -227,7 +227,7 @@ export function Atributos({ inicial }: { inicial: Atributo[] }) {
                         >
                           {a.valor}
                         </span>
-                        <span className="truncate font-heading text-[0.8rem] uppercase sm:text-base sm:tracking-wide">
+                        <span className="truncate font-rotulo text-[0.8rem] uppercase sm:text-base sm:tracking-wide">
                           {a.nome}
                         </span>
                         {a.bonus !== 0 && (

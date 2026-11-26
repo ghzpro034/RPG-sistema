@@ -66,7 +66,7 @@ export function EntregarItem({
             </select>
             <Input name="qtd" type="number" min={1} defaultValue={1} aria-label="Quantidade" className="h-10 w-20 text-lg md:text-lg" />
           </div>
-          <Button type="submit" size="lg" disabled={enviando} className="font-heading tracking-wider">
+          <Button type="submit" size="lg" disabled={enviando} className="font-heading">
             {enviando ? "Entregando…" : "Entregar"}
           </Button>
         </form>

@@ -2,6 +2,7 @@
 
 import { Check, Loader2, Pencil, Skull } from "lucide-react";
 import { Atributos } from "@/components/ficha/Atributos";
+import { Divisor } from "@/components/Divisor";
 import { Baralho } from "@/components/ficha/Baralho";
 import { Cabecalho } from "@/components/ficha/Cabecalho";
 import { Conhecimento } from "@/components/ficha/Conhecimento";
@@ -30,7 +31,7 @@ function BarraEdicao() {
     return (
       <div className="flex flex-col items-center gap-1 rounded-xl border border-white/15 bg-card px-4 py-4 text-center">
         <Skull className="size-7 text-muted-foreground" aria-hidden />
-        <p className="font-heading text-lg tracking-[0.2em] uppercase">No memorial</p>
+        <p className="font-rotulo text-lg tracking-[0.2em] uppercase">No memorial</p>
         <p className="text-base text-muted-foreground" suppressHydrationWarning>
           Morreu em {new Date(personagem.morto_em!).toLocaleDateString("pt-BR")}. A ficha é só leitura.
         </p>
@@ -47,7 +48,7 @@ function BarraEdicao() {
       <Button
         variant={editando ? "default" : "outline"}
         size="lg"
-        className="h-11 font-heading tracking-wider"
+        className="h-11 font-heading"
         onClick={() => setEditando(!editando)}
       >
         {editando ? <Check /> : <Pencil />}
@@ -72,8 +73,11 @@ function Conteudo({ dados }: { dados: DadosFicha }) {
   return (
     <>
       <Cabecalho retratoInicial={dados.retratoUrl} cartas={ao.cartas} />
+      <Divisor />
       <Vitais />
+      <Divisor />
       <Atributos inicial={dados.atributos} />
+      <Divisor />
 
       <Tabs defaultValue="baralho" className="gap-4">
         {/* no celular as abas quebram em linhas: todas ficam à vista, sem rolar para o lado */}
