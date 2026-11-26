@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Estrelas } from "@/components/ficha/Inventario";
 import type { FormaGraca, Graca, ItemInventario, Raridade } from "@/lib/ficha-tipos";
 import { createClient } from "@/lib/supabase/client";
 import { Vazio } from "@/components/Estados";
@@ -21,6 +22,12 @@ const FORMAS_MEMORIA = [
   "50,4 85,15 96,50 85,85 50,96 15,85 4,50 15,15",
   "50,4 96,50 50,96 4,50",
 ];
+
+const BORDA_RARIDADE: Record<Raridade, string> = {
+  comum: "border-comum",
+  incomum: "border-incomum",
+  unico: "border-unico",
+};
 
 const COR_RARIDADE: Record<Raridade, string> = {
   comum: "text-comum",
@@ -64,22 +71,35 @@ function Memorias({
   return (
     <li className="flex flex-col gap-4 sm:flex-row">
       <div className="flex gap-3 sm:w-64 sm:flex-col">
-        <div className="size-24 shrink-0 overflow-hidden rounded-md border-4 border-incomum bg-secondary">
+        <div className={cn("size-24 shrink-0 overflow-hidden rounded-md border-4 bg-secondary", BORDA_RARIDADE[item.raridade])}>
           {item.imagemUrl && (
             // eslint-disable-next-line @next/next/no-img-element -- URL assinada do Supabase
             <img src={item.imagemUrl} alt="" className="size-full object-cover" />
           )}
         </div>
         <div className="min-w-0">
-          <h3 className={cn("text-xl font-bold tracking-[0.15em] uppercase", COR_RARIDADE[item.raridade])}>{item.nome}</h3>
-          {item.descricao && <p className="text-base leading-snug uppercase">{item.descricao}</p>}
-          {item.efeito && <p className="mt-1 font-heading text-lg font-bold text-instavel">{item.efeito}</p>}
+          <h3 className={cn("text-2xl leading-tight", COR_RARIDADE[item.raridade])}>{item.nome}</h3>
+          <Estrelas total={item.max_memorias} acesas={abertas} className="mt-0.5" />
+          {item.descricao && <p className="text-base leading-snug text-muted-foreground">{item.descricao}</p>}
+          {item.dano && (
+            <p className="mt-1 text-lg font-bold text-instavel tabular-nums">
+              {item.dano} <span className="font-rotulo text-xs tracking-[0.2em] uppercase">de dano</span>
+            </p>
+          )}
+          {item.efeito && <p className="font-heading text-base text-ouro">{item.efeito}</p>}
+          {item.criador && (
+            <p className="font-rotulo text-xs tracking-[0.2em] text-muted-foreground uppercase">
+              Criado por <span className="text-foreground">{item.criador}</span>
+            </p>
+          )}
         </div>
       </div>
-      <ol className="flex flex-col gap-1">
+      <ol className="flex min-w-0 flex-1 flex-col gap-2">
         {Array.from({ length: item.max_memorias }, (_, n) => {
           const aberta = n < abertas;
           const clicavel = souMestre && (n === abertas || n === abertas - 1);
+          // a memória escrita pelo mestre no Catálogo; fechada, só o número aparece
+          const memoria = item.memorias.find((m) => m.ordem === n + 1);
           const forma = (
             <svg viewBox="0 0 100 100" className="size-14 shrink-0" aria-hidden>
               <polygon
@@ -87,7 +107,7 @@ function Memorias({
                 className={cn("stroke-incomum", aberta ? "fill-incomum" : "fill-transparent opacity-40")}
                 strokeWidth={6}
               />
-              <text x="50" y="58" textAnchor="middle" className="fill-white font-heading text-[22px] font-bold">
+              <text x="50" y="58" textAnchor="middle" className="fill-white font-sans text-[26px] font-bold">
                 {ROMANOS[n]}
               </text>
             </svg>
@@ -106,10 +126,20 @@ function Memorias({
               ) : (
                 forma
               )}
-              <span className={cn("font-rotulo text-base tracking-wider uppercase", !aberta && "text-muted-foreground/60")}>
-                Memória {ROMANOS[n]}
-                {!aberta && " · bloqueada"}
-              </span>
+              <div className="min-w-0">
+                {aberta && memoria ? (
+                  <>
+                    <p className="text-xl leading-tight text-incomum">{memoria.nome}</p>
+                    {memoria.descricao && <p className="text-base leading-snug text-muted-foreground">{memoria.descricao}</p>}
+                    {memoria.efeito && <p className="font-heading text-lg text-ouro">{memoria.efeito}</p>}
+                  </>
+                ) : (
+                  <p className={cn("font-rotulo text-base tracking-wider uppercase", !aberta && "text-muted-foreground/60")}>
+                    Memória {ROMANOS[n]}
+                    {!aberta && " · bloqueada"}
+                  </p>
+                )}
+              </div>
             </li>
           );
         })}

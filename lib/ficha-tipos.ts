@@ -26,6 +26,10 @@ export type Personagem = {
   social: number;
   /** pontos de Sinergia: pagam as habilidades de Caminho */
   sinergia: number;
+  /** espaços do inventário por raridade (Compêndio); só o mestre muda */
+  espacos_comum: number;
+  espacos_incomum: number;
+  espacos_unico: number;
   raca: Raca | null;
   /** moeda do RPG; 0 enquanto a migration da moeda não roda */
   dentes: number;
@@ -110,13 +114,45 @@ export type UsoCarta = {
 
 export type Raridade = "comum" | "incomum" | "unico";
 
+export const RARIDADES: { valor: Raridade; nome: string; cor: string; fundo: string; borda: string }[] = [
+  { valor: "comum", nome: "Comum", cor: "text-comum", fundo: "bg-comum", borda: "border-comum" },
+  { valor: "incomum", nome: "Incomum", cor: "text-incomum", fundo: "bg-incomum", borda: "border-incomum" },
+  { valor: "unico", nome: "Único", cor: "text-unico", fundo: "bg-unico", borda: "border-unico" },
+];
+
+/** Compêndio: quantas memórias (estrelas ★) uma arma pode ter, pela raridade */
+export const MAX_MEMORIAS: Record<Raridade, number> = { comum: 1, incomum: 3, unico: 5 };
+
+/** a coluna de espaços da ficha para cada raridade */
+export const COLUNA_ESPACOS: Record<Raridade, "espacos_comum" | "espacos_incomum" | "espacos_unico"> = {
+  comum: "espacos_comum",
+  incomum: "espacos_incomum",
+  unico: "espacos_unico",
+};
+
+/** uma memória de arma: nome, descrição e efeito, na ordem em que se desbloqueia */
+export type MemoriaItem = {
+  id: string;
+  ordem: number;
+  nome: string;
+  descricao: string | null;
+  efeito: string | null;
+};
+
 export type ItemCatalogo = {
   id: string;
   nome: string;
   raridade: Raridade;
+  /** dado de dano ("D10", "2D10") */
+  dano: string | null;
+  /** bônus ou efeito ("+6 de Resistência", "+3 de Cura") */
   efeito: string | null;
   descricao: string | null;
+  /** quem fez o item ("Lucius Francis") */
+  criador: string | null;
+  /** quantas memórias este item tem (até MAX_MEMORIAS da raridade) */
   max_memorias: number;
+  memorias: MemoriaItem[];
   imagem_path: string | null;
   imagemUrl: string | null;
 };
@@ -179,7 +215,6 @@ export type DadosFicha = {
   souMestre: boolean;
 };
 
-export const ESPACOS_INVENTARIO = 4;
 export const BUCKET_IMAGENS = "imagens";
 // URLs assinadas valem uma semana; a página é recarregada bem antes disso
 export const VALIDADE_URL = 60 * 60 * 24 * 7;

@@ -18,6 +18,9 @@ const CAMPOS: Record<string, string> = {
   limiar_instavel: "Limiar de Instável",
   limite_congelado: "Limite de congelamento",
   raca: "Raça",
+  espacos_comum: "Espaços Comum",
+  espacos_incomum: "Espaços Incomum",
+  espacos_unico: "Espaços Único",
   corrupcao: "Corrupção",
   congelado: "Congelamento",
   dentes: "Dentes",
@@ -47,6 +50,9 @@ const CURTOS = new Set([
   "limiar_instavel",
   "limite_congelado",
   "raca",
+  "espacos_comum",
+  "espacos_incomum",
+  "espacos_unico",
 ]);
 
 function descrever(a: Alteracao) {

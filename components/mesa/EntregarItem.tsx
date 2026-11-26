@@ -5,12 +5,13 @@ import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { RARIDADES } from "@/lib/ficha-tipos";
 import type { DadosMesa } from "@/lib/mesa";
 import { createClient } from "@/lib/supabase/client";
 
 const SELECT = "h-10 w-full rounded-lg border border-input bg-input/30 px-2.5 text-lg";
 
-// Mestre entrega um item do catálogo; a RPC respeita os 4 espaços e empilha iguais.
+// Mestre entrega um item do catálogo; a RPC respeita os espaços da raridade (de cada ficha) e empilha iguais.
 export function EntregarItem({
   personagens,
   itens,
@@ -61,7 +62,9 @@ export function EntregarItem({
             <select name="item" defaultValue="" aria-label="Item" className={SELECT}>
               <option value="" disabled>Qual item…</option>
               {itens.map((i) => (
-                <option key={i.id} value={i.id}>{i.nome}</option>
+                <option key={i.id} value={i.id}>
+                  {i.nome} · {RARIDADES.find((r) => r.valor === i.raridade)?.nome}
+                </option>
               ))}
             </select>
             <Input name="qtd" type="number" min={1} defaultValue={1} aria-label="Quantidade" className="h-10 w-20 text-lg md:text-lg" />

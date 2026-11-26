@@ -4,7 +4,7 @@
 > atualize no mesmo commit de qualquer mudança que altere o que está escrito aqui (nova função,
 > migration, decisão de regra, pendência resolvida ou nova).
 >
-> Última atualização: 2026-11-26
+> Última atualização: 2026-11-27
 >
 > Visão completa (histórico, decisões com o porquê, banco, desempenho): [`RELATORIO.md`](RELATORIO.md).
 
@@ -78,8 +78,8 @@ A secret key e a senha do Postgres não são usadas pelo app.
 
 > **O sistema mudou (18/11/2026)** e o **Compêndio do Sistema é a fonte oficial**: quando uma ficha antiga disser
 > outra coisa, vale o Compêndio. As regras completas e atuais estão em [`docs/SISTEMA.md`](docs/SISTEMA.md),
-> resumidas do Compêndio do Sistema e das fichas novas. A ficha e as cartas já seguem o sistema novo (Fases A e B);
-> inventário e combate ainda seguem o antigo (Fases C e D, ver Pendências).
+> resumidas do Compêndio do Sistema e das fichas novas. A ficha, as cartas e o inventário já seguem o sistema novo
+> (Fases A a C); o combate ainda segue o antigo (Fase D, ver Pendências).
 
 - **Características e especializações:** Vigor (Força, Movimento, Furtividade, Resistência), Mental (Vasculhar,
   Percepção, Conhecimento, Atirar, Criar), Social (Lábia, Intimidação, Adestramento, Sorte, Presença). O valor de
@@ -100,10 +100,17 @@ A secret key e a senha do Postgres não são usadas pelo app.
   e/ou Sinergia e avisa a Mesa ao vivo (tabela `usos_carta`). Descontos (ex.: O Inocente) o mestre ajusta à mão.
 - **Caminho da ficha:** Amor, Revolta ou Absurdo (`personagens.caminho`); só o mestre muda (aprende-se com quem já tem).
 - **Dentes:** moeda principal do RPG.
-- **Inventário:** 4 espaços. Raridades: Comum (branco), Incomum (azul), Único (roxo).
+- **Inventário:** espaços **por raridade e por ficha** (`personagens.espacos_comum|incomum|unico`, padrão 4/2/1;
+  só o mestre muda, decidido em 27/11). Raridades: Comum (branco), Incomum (azul), Único (roxo). Itens iguais empilham
+  no mesmo espaço; `entregar_item` recusa quando a raridade está cheia.
+- **Itens:** nome, raridade, **dano** (`dano`, ex.: "2D10"), bônus (`efeito`, ex.: "+6 de Resistência"), descrição e
+  **criador** (`criador`).
+- **Memórias de arma (`memorias_item`):** cada uma tem nome, descrição e efeito, escritos pelo mestre no Catálogo.
+  Limite pela raridade: **Comum 1, Incomum 3, Único 5** (`max_memorias_da_raridade`). **As estrelas ★ são as memórias**
+  (confirmado em 27/11): acesas = desbloqueadas na ficha (`inventario.memorias_desbloqueadas`). O jogador só lê o texto
+  depois que o mestre desbloqueia.
 - **Conhecimento:** lista fixa de 16 áreas; as dominantes ficam em destaque.
 - **Enganar a morte:** vem de carta (ex.: Agraciado); fica riscado depois de usado.
-- **Em aberto:** o que medem as estrelas ★☆☆☆ dos itens (provavelmente o nível de memória da arma; ver `docs/SISTEMA.md`).
 
 ## Decisões de funcionamento
 
@@ -149,6 +156,7 @@ O usuário roda cada migration no **SQL Editor do Supabase** antes do push do c�
 | `20261124000000_manter_vivo` | Tabela `batimentos` e RPC `manter_vivo` (aberta a anon) para o Supabase não pausar | sim |
 | `20261125000000_sistema_fase_a` | Sistema novo na ficha: Vigor, Criar, características, bônus de D20, `rolar_d100` na característica, `rolar_d20`, limiares por ficha, Sinergia, raça | sim |
 | `20261126000000_sistema_fase_b` | Cartas do sistema novo: tipo caminho (era revolta), custos em PE/Sinergia, arte, 19 cartas do Compêndio no catálogo, limites do baralho, `usar_carta` e `usos_carta`, Caminho da ficha só pelo mestre | sim |
+| `20261127000000_sistema_fase_c` | Inventário do sistema novo: dano e criador nos itens, `memorias_item` (nome/descrição/efeito), limite de memórias pela raridade, espaços por raridade e por ficha, `entregar_item` por raridade | sim |
 
 ## Estado atual
 
@@ -162,10 +170,11 @@ funções da Vercel em São Paulo, imagens guardadas no celular pelo service wor
 raça e limites por ficha. As fichas antigas foram convertidas: as características começaram pela média das
 especializações e Criar entrou com 0 — **o mestre precisa conferir e ajustar esses valores**. **Fase B** (cartas):
 as 19 cartas do Compêndio com arte no catálogo de cada mestre, custos em PE/Sinergia com o botão Usar e aviso na
-Mesa, limites do baralho e Caminho da ficha escolhido pelo mestre.
+Mesa, limites do baralho e Caminho da ficha escolhido pelo mestre. **Fase C** (inventário): espaços por raridade em
+cada ficha, dano e criador nos itens, memórias de arma com nome/história/efeito e as estrelas ★. **Visual** das cartas
+e fichas (Grenze Gotisch, Belleza, sigilo, molduras).
 
-**Em andamento:** visual novo (fontes, sigilo, molduras) pronto e conferido no navegador em celular e desktop; falta commit e push.
-Depois: Fase C (inventário).
+**Em andamento:** nada. Próxima: Fase D (combate na Mesa).
 
 **Lição (24/11):** o Supabase pausou entre 16 e 19/11 mesmo com o keep-alive antigo, porque a consulta recebia
 "sem permissão" e isso não contou como uso. O batimento precisa ser uma operação que dá certo (hoje, uma escrita).
@@ -179,6 +188,8 @@ deploy da Vercel falhou. Atualizado para 16.4.6. Se um deploy falhar do nada, ro
 - As imagens guardadas no celular (na segunda abertura da ficha, as imagens aparecem na hora, sem baixar de novo).
 - A Fase A: D100 numa característica, D20 numa especialização (com bônus), Reforçar/Refazer nos dois dados,
   e o mestre editando características, bônus, limiar de Instável, limite de congelamento e raça.
+- A Fase C: entregar itens até encher uma raridade (deve recusar), mudar os espaços como mestre, escrever as
+  memórias de uma arma no Catálogo e desbloquear na ficha (o texto aparece, a estrela acende).
 - A Fase B: as 19 cartas no Catálogo com arte, dar o 4º arquétipo (deve recusar), "Usar" num trauma (−5 PE) e
   numa carta de Caminho (−Sinergia), o aviso na Mesa ao vivo e o Caminho no cabeçalho.
 - A ficha e a Mesa mais rápidas com as funções em São Paulo (medir na aba Rede do navegador).
@@ -188,7 +199,7 @@ deploy da Vercel falhou. Atualizado para 16.4.6. Se um deploy falhar do nada, ro
 **Adaptar o app ao sistema novo** (`docs/SISTEMA.md`), em fases:
 - **A — Ficha:** no ar desde 25/11 (ver Regras do jogo).
 - **B — Cartas:** no ar desde 26/11 (ver Regras do jogo).
-- **C — Inventário:** espaços por raridade, dano/bônus/criador, memórias com nome e efeito, estrelas.
+- **C — Inventário:** no ar desde 27/11 (ver Regras do jogo).
 - **D — Combate na Mesa:** Grupos A e B, tiro D8/D6, dados de dano, Defender, Recuperar Foco.
 
 **Dependem do mestre / da mesa**
@@ -196,9 +207,10 @@ deploy da Vercel falhou. Atualizado para 16.4.6. Se um deploy falhar do nada, ro
   e rodar `node scripts/gerar-icones.mjs`.
 - Artes: retratos, imagens dos itens e das cartas que não são do Compêndio (o mestre sobe pelo Catálogo e por "Trocar foto").
 - Cadastro do Ivan: cartas Agraciado (habilidade única) e Incerteza Biológica (Caminho da Revolta, I, 1 Sinergia);
-  itens Arma de Pressão e Ossos Pequenos. O Cuidador, O Órfão e Abandono já vêm do Compêndio.
+  itens Arma de Pressão (Comum, D10, criada por Lucius Francis) e Ossos Pequenos (+6 de dano de fragmento).
+- Conferir os espaços de cada ficha (começam em 4 Comum / 2 Incomum / 1 Único) e escrever as memórias das armas
+  (ex.: Corte Seco do Baku). O Cuidador, O Órfão e Abandono já vêm do Compêndio.
 - Habilidades de Caminho que faltam texto (Proteção de Placebo) e os efeitos do Destinatário.
-- Significado das estrelas ★☆☆☆ dos itens.
 
 **Testes do usuário**
 - Instalar o PWA num Android e num iPhone de verdade.

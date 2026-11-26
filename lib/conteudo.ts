@@ -6,12 +6,21 @@ import {
   type Graca,
   type ItemCatalogo,
   type ItemInventario,
+  type MemoriaItem,
 } from "@/lib/ficha-tipos";
 
 // Carregadores que servem tanto no servidor quanto no navegador (Realtime recarrega com eles).
 
 const CAMPOS_CARTA = "id, tipo, nome, citacao, efeitos, custo, custo_pe, custo_sinergia, caminho, nivel, arte, imagem_path";
-const CAMPOS_ITEM = "id, nome, raridade, efeito, descricao, max_memorias, imagem_path";
+const CAMPOS_ITEM =
+  "id, nome, raridade, dano, efeito, descricao, criador, max_memorias, imagem_path, memorias_item(id, ordem, nome, descricao, efeito)";
+
+// o item como o banco devolve: as memórias vêm em memorias_item; o app usa item.memorias, em ordem
+type ItemDoBanco = Omit<ItemCatalogo, "imagemUrl" | "memorias"> & { memorias_item: MemoriaItem[] | null };
+
+function comMemorias({ memorias_item, ...resto }: ItemDoBanco): Omit<ItemCatalogo, "imagemUrl"> {
+  return { ...resto, memorias: (memorias_item ?? []).slice().sort((a, b) => a.ordem - b.ordem) };
+}
 
 // Gera as URLs assinadas de várias imagens de uma vez.
 export async function assinar(supabase: SupabaseClient, caminhos: (string | null)[]) {
@@ -50,7 +59,7 @@ export async function carregarInventario(supabase: SupabaseClient, personagemId:
     .order("id");
   const linhas = (data ?? []).map(({ itens, ...linha }) => ({
     ...linha,
-    item: itens as unknown as Omit<ItemCatalogo, "imagemUrl">,
+    item: comMemorias(itens as unknown as ItemDoBanco),
   }));
   const itens = await comUrl(supabase, linhas.map((l) => l.item));
   return linhas.map((l, n) => ({ ...l, item: itens[n] }));
@@ -68,7 +77,7 @@ export async function carregarCatalogo(supabase: SupabaseClient, mestreId: strin
     supabase.from("cartas").select(CAMPOS_CARTA).eq("mestre_id", mestreId).order("tipo").order("nome"),
   ]);
   const [itensComUrl, cartasComUrl] = await Promise.all([
-    comUrl(supabase, (itens ?? []) as Omit<ItemCatalogo, "imagemUrl">[]),
+    comUrl(supabase, ((itens ?? []) as unknown as ItemDoBanco[]).map(comMemorias)),
     comUrl(supabase, (cartas ?? []) as Omit<Carta, "imagemUrl">[]),
   ]);
   return { itens: itensComUrl as ItemCatalogo[], cartas: cartasComUrl as Carta[] };

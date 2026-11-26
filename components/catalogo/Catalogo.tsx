@@ -10,12 +10,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import { Estrelas } from "@/components/ficha/Inventario";
 import {
   BUCKET_IMAGENS,
   CAMINHOS,
+  MAX_MEMORIAS,
   nomeDoCaminho,
   type Carta,
   type ItemCatalogo,
+  type MemoriaItem,
   type Raridade,
   type TipoCarta,
 } from "@/lib/ficha-tipos";
@@ -71,6 +74,69 @@ function Miniatura({ url, className }: { url: string | null; className?: string 
     </div>
   );
 }
+
+// Campos do item. A raridade limita as memórias (Comum 1, Incomum 3, Único 5); cada memória tem nome, descrição e efeito.
+function CamposItem({ item }: { item: ItemCatalogo | null }) {
+  const [raridade, setRaridade] = useState<Raridade>(item?.raridade ?? "comum");
+  const [total, setTotal] = useState(item?.max_memorias ?? 0);
+  const limite = MAX_MEMORIAS[raridade];
+  const memorias = Math.min(total, limite);
+  return (
+    <>
+      <Campo rotulo="Nome">
+        <Input name="nome" defaultValue={item?.nome} required className="h-10 text-lg md:text-lg" />
+      </Campo>
+      <div className="grid grid-cols-2 gap-3">
+        <Campo rotulo="Raridade">
+          <select name="raridade" value={raridade} onChange={(e) => setRaridade(e.target.value as Raridade)} className={SELECT}>
+            {RARIDADES.map((r) => (
+              <option key={r.valor} value={r.valor}>{r.rotulo}</option>
+            ))}
+          </select>
+        </Campo>
+        <Campo rotulo={`Memórias (até ${limite})`}>
+          <Input
+            name="max_memorias"
+            type="number"
+            min={0}
+            max={limite}
+            value={memorias}
+            onChange={(e) => setTotal(Math.max(0, Math.min(limite, Number(e.target.value) || 0)))}
+            className="h-10 text-lg md:text-lg"
+          />
+        </Campo>
+      </div>
+      <div className="grid grid-cols-2 items-end gap-3">
+        <Campo rotulo="Dano (ex.: 2D10)">
+          <Input name="dano" defaultValue={item?.dano ?? ""} className="h-10 text-lg md:text-lg" />
+        </Campo>
+        <Campo rotulo="Bônus (ex.: +3 de Cura)">
+          <Input name="efeito" defaultValue={item?.efeito ?? ""} className="h-10 text-lg md:text-lg" />
+        </Campo>
+      </div>
+      <Campo rotulo="Descrição">
+        <Textarea name="descricao" defaultValue={item?.descricao ?? ""} className="min-h-20 text-lg md:text-lg" />
+      </Campo>
+      <Campo rotulo="Criado por (opcional)">
+        <Input name="criador" defaultValue={item?.criador ?? ""} className="h-10 text-lg md:text-lg" />
+      </Campo>
+      {/* memória sem nome fica em branco na ficha ("Memória II"); o jogador só vê o texto depois que o mestre desbloqueia */}
+      {Array.from({ length: memorias }, (_, n) => {
+        const atual = item?.memorias.find((m) => m.ordem === n + 1);
+        return (
+          <fieldset key={n} className="flex flex-col gap-2 rounded-lg border border-incomum/40 p-3">
+            <legend className="px-1 font-rotulo text-xs tracking-[0.2em] text-incomum uppercase">Memória {ROMANOS[n]}</legend>
+            <Input name={`memoria_nome_${n + 1}`} defaultValue={atual?.nome ?? ""} placeholder="Nome (ex.: Corte Seco)" className="h-10 text-lg md:text-lg" />
+            <Textarea name={`memoria_descricao_${n + 1}`} defaultValue={atual?.descricao ?? ""} placeholder="A história da memória" className="min-h-16 text-lg md:text-lg" />
+            <Input name={`memoria_efeito_${n + 1}`} defaultValue={atual?.efeito ?? ""} placeholder="Efeito (ex.: +10 de dano em membros)" className="h-10 text-lg md:text-lg" />
+          </fieldset>
+        );
+      })}
+    </>
+  );
+}
+
+const ROMANOS = ["I", "II", "III", "IV", "V"];
 
 // Campos da carta; Caminho e nível só aparecem nas cartas de caminho.
 function CamposCarta({ carta }: { carta: Carta | null }) {
@@ -199,9 +265,14 @@ export function Catalogo({
         ? {
             nome: String(form.get("nome")).trim(),
             raridade: String(form.get("raridade")),
+            dano: String(form.get("dano")).trim() || null,
             efeito: String(form.get("efeito")).trim() || null,
             descricao: String(form.get("descricao")).trim() || null,
-            max_memorias: Math.max(0, Math.min(5, Number(form.get("max_memorias")) || 0)),
+            criador: String(form.get("criador")).trim() || null,
+            max_memorias: Math.max(
+              0,
+              Math.min(MAX_MEMORIAS[String(form.get("raridade")) as Raridade] ?? 0, Number(form.get("max_memorias")) || 0),
+            ),
           }
         : {
             tipo: String(form.get("tipo")),
@@ -230,6 +301,7 @@ export function Catalogo({
       // sem imagem enviada, a carta do Compêndio mostra a arte embutida no app
       const arte = data.arte ? `/cartas/${data.arte}.webp` : null;
       let linha = { ...data, imagemUrl: (antigo?.imagem_path ? antigo.imagemUrl : null) ?? arte };
+      if (edicao.tipo === "item") linha = { ...linha, memorias: await salvarMemorias(data.id, data.max_memorias, form) };
       if (imagem) {
         const { caminho, url } = await enviarImagemCatalogo(supabase, tabela, mestreId, data.id, imagem);
         const troca = await supabase.from(tabela).update({ imagem_path: caminho }).eq("id", data.id);
@@ -255,6 +327,30 @@ export function Catalogo({
     } finally {
       setSalvando(false);
     }
+  }
+
+  // as memórias do item: grava as preenchidas (na ordem I, II…) e apaga as que ficaram vazias ou acima do limite
+  async function salvarMemorias(itemId: string, total: number, form: FormData): Promise<MemoriaItem[]> {
+    const linhas = Array.from({ length: total }, (_, n) => ({
+      item_id: itemId,
+      ordem: n + 1,
+      nome: String(form.get(`memoria_nome_${n + 1}`) ?? "").trim(),
+      descricao: String(form.get(`memoria_descricao_${n + 1}`) ?? "").trim() || null,
+      efeito: String(form.get(`memoria_efeito_${n + 1}`) ?? "").trim() || null,
+    }));
+    const preenchidas = linhas.filter((m) => m.nome);
+    const vazias = Array.from({ length: 5 }, (_, n) => n + 1).filter((o) => !preenchidas.some((m) => m.ordem === o));
+    if (vazias.length) {
+      const { error } = await supabase.from("memorias_item").delete().eq("item_id", itemId).in("ordem", vazias);
+      if (error) throw error;
+    }
+    if (!preenchidas.length) return [];
+    const { data, error } = await supabase
+      .from("memorias_item")
+      .upsert(preenchidas, { onConflict: "item_id,ordem" })
+      .select("id, ordem, nome, descricao, efeito");
+    if (error) throw error;
+    return ((data ?? []) as MemoriaItem[]).sort((a, b) => a.ordem - b.ordem);
   }
 
   async function apagar(tabela: "itens" | "cartas", x: { id: string; imagem_path: string | null }) {
@@ -302,9 +398,10 @@ export function Catalogo({
                       <p className={cn("truncate font-rotulo text-base font-bold uppercase", raridade?.cor)}>{i.nome}</p>
                       <p className="truncate text-base text-muted-foreground">
                         {raridade?.rotulo}
+                        {i.dano && ` · ${i.dano} de dano`}
                         {i.efeito && ` · ${i.efeito}`}
-                        {i.max_memorias > 0 && ` · ${i.max_memorias} memória(s)`}
                       </p>
+                      <Estrelas total={i.max_memorias} acesas={0} />
                     </div>
                     <Button variant="ghost" size="icon-lg" aria-label={`Editar ${i.nome}`} onClick={() => abrir({ tipo: "item", valor: i })}>
                       <Pencil />
@@ -371,29 +468,7 @@ export function Catalogo({
               }}
             >
               {edicao.tipo === "item" ? (
-                <>
-                  <Campo rotulo="Nome">
-                    <Input name="nome" defaultValue={edicao.valor?.nome} required className="h-10 text-lg md:text-lg" />
-                  </Campo>
-                  <div className="grid grid-cols-2 gap-3">
-                    <Campo rotulo="Raridade">
-                      <select name="raridade" defaultValue={edicao.valor?.raridade ?? "comum"} className={SELECT}>
-                        {RARIDADES.map((r) => (
-                          <option key={r.valor} value={r.valor}>{r.rotulo}</option>
-                        ))}
-                      </select>
-                    </Campo>
-                    <Campo rotulo="Memórias (0 a 5)">
-                      <Input name="max_memorias" type="number" min={0} max={5} defaultValue={edicao.valor?.max_memorias ?? 0} className="h-10 text-lg md:text-lg" />
-                    </Campo>
-                  </div>
-                  <Campo rotulo="Efeito (ex.: D10 de dano + fragmento)">
-                    <Input name="efeito" defaultValue={edicao.valor?.efeito ?? ""} className="h-10 text-lg md:text-lg" />
-                  </Campo>
-                  <Campo rotulo="Descrição">
-                    <Textarea name="descricao" defaultValue={edicao.valor?.descricao ?? ""} className="min-h-20 text-lg md:text-lg" />
-                  </Campo>
-                </>
+                <CamposItem item={edicao.valor} />
               ) : (
                 <CamposCarta carta={edicao.valor} />
               )}
