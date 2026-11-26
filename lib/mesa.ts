@@ -1,5 +1,5 @@
 import { assinar } from "@/lib/conteudo";
-import type { Personagem, Raridade, Rolagem } from "@/lib/ficha-tipos";
+import type { Personagem, Raridade, Rolagem, UsoCarta } from "@/lib/ficha-tipos";
 import { createClient } from "@/lib/supabase/server";
 
 export type CardPersonagem = Pick<
@@ -46,6 +46,8 @@ export type Disponivel = { id: string; nome: string; mesas: string[] };
 export type DadosMesa = {
   personagens: CardPersonagem[];
   rolagens: Rolagem[];
+  /** traumas, caminhos e outras cartas pagas pelos jogadores (aparecem junto das rolagens) */
+  usos: UsoCarta[];
   alteracoes: Alteracao[];
   itens: { id: string; nome: string; raridade: Raridade }[];
   /** nome de cada membro da mesa, para dizer quem mudou o quê */
@@ -62,7 +64,7 @@ type LinhaPersonagem = Omit<CardPersonagem, "jogador" | "retratoUrl" | "itens"> 
 // Tudo o que o painel do mestre mostra ao abrir; depois o Realtime mantém em dia.
 export async function carregarMesa(campanhaId: string, mestreId: string, outrasMesas: string[]): Promise<DadosMesa> {
   const supabase = await createClient();
-  const [{ data: linhas }, { data: mortos }, { data: rolagens }, { data: itens }, { data: membros }, { data: deOutras }] =
+  const [{ data: linhas }, { data: mortos }, { data: rolagens }, { data: usos }, { data: itens }, { data: membros }, { data: deOutras }] =
     await Promise.all([
       supabase
         .from("mesa_personagens")
@@ -77,6 +79,7 @@ export async function carregarMesa(campanhaId: string, mestreId: string, outrasM
         .eq("campanha_id", campanhaId)
         .not("personagens.morto_em", "is", null),
       supabase.from("rolagens").select("*").eq("campanha_id", campanhaId).order("created_at", { ascending: false }).limit(20),
+      supabase.from("usos_carta").select("*").eq("campanha_id", campanhaId).order("created_at", { ascending: false }).limit(20),
       supabase.from("itens").select("id, nome, raridade").eq("mestre_id", mestreId).order("nome"),
       supabase.from("membros").select("user_id, profiles(nome)").eq("campanha_id", campanhaId),
       outrasMesas.length
@@ -128,6 +131,7 @@ export async function carregarMesa(campanhaId: string, mestreId: string, outrasM
       retratoUrl: p.retrato_path ? (urls.get(p.retrato_path) ?? null) : null,
     })),
     rolagens: (rolagens ?? []) as Rolagem[],
+    usos: (usos ?? []) as UsoCarta[],
     alteracoes: (alteracoes ?? []) as Alteracao[],
     itens: (itens ?? []) as DadosMesa["itens"],
     autores: Object.fromEntries(

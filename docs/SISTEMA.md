@@ -8,8 +8,9 @@
 > o verso disser outra coisa, vale o Compêndio. A única exceção decidida é o empate no D100, que conta como sucesso.
 > Pontos marcados com **⚠ em aberto** ainda precisam de confirmação do mestre.
 >
-> **No app (25/11):** a parte de ficha (seções 2 e 4: características, D100/D20, estados, Sinergia, raça) já segue
-> este documento. Cartas, inventário e combate ainda não.
+> **No app:** a ficha (seções 2 e 4: características, D100/D20, estados, Sinergia, raça; 25/11) e as cartas
+> (seções 7 a 10: arquétipos, traumas, habilidades únicas e de Caminho, com as artes; 26/11) já seguem este documento.
+> Inventário e combate ainda não.
 
 ---
 

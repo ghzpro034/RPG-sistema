@@ -8,7 +8,8 @@ export type Personagem = {
   nivel: string | null;
   retrato_path: string | null;
   descricao: string | null;
-  caminho: string | null;
+  /** Amor, Revolta ou Absurdo; só o mestre muda */
+  caminho: Caminho | null;
   vida: number;
   vida_max: number;
   /** Pontos de Proteção (armadura); a coluna se chama defesa desde o sistema antigo */
@@ -40,6 +41,16 @@ export type Personagem = {
 
 export type Raca = "errante" | "palido" | "sanguineo";
 
+export type Caminho = "amor" | "revolta" | "absurdo";
+
+export const CAMINHOS: { valor: Caminho; nome: string }[] = [
+  { valor: "amor", nome: "Amor" },
+  { valor: "revolta", nome: "Revolta" },
+  { valor: "absurdo", nome: "Absurdo" },
+];
+
+export const nomeDoCaminho = (c: Caminho | null) => CAMINHOS.find((x) => x.valor === c)?.nome ?? null;
+
 export const RACAS: { valor: Raca; nome: string }[] = [
   { valor: "errante", nome: "Errante" },
   { valor: "palido", nome: "Pálido" },
@@ -60,7 +71,8 @@ export type Atributo = {
   ordem: number;
 };
 
-export type TipoCarta = "arquetipo" | "trauma" | "habilidade" | "revolta";
+/** habilidade = habilidade única (uma por personagem); caminho = habilidade de Caminho (paga em Sinergia) */
+export type TipoCarta = "arquetipo" | "trauma" | "habilidade" | "caminho";
 
 export type Carta = {
   id: string;
@@ -68,9 +80,32 @@ export type Carta = {
   nome: string;
   citacao: string | null;
   efeitos: string[];
+  /** custo antigo em texto livre; as cartas novas usam custo_pe e custo_sinergia */
   custo: string | null;
+  custo_pe: number;
+  custo_sinergia: number;
+  /** só nas cartas de caminho */
+  caminho: Caminho | null;
+  nivel: string | null;
+  /** arte embutida no app (/cartas/{arte}.webp), usada quando o mestre não enviou imagem */
+  arte: string | null;
   imagem_path: string | null;
   imagemUrl: string | null;
+};
+
+/** Compêndio: até 3 arquétipos e uma habilidade única por personagem */
+export const MAX_ARQUETIPOS = 3;
+
+export type UsoCarta = {
+  id: string;
+  campanha_id: string;
+  personagem_id: string;
+  carta_id: string | null;
+  nome: string;
+  tipo: TipoCarta;
+  custo_pe: number;
+  custo_sinergia: number;
+  created_at: string;
 };
 
 export type Raridade = "comum" | "incomum" | "unico";

@@ -4,7 +4,7 @@
 > atualize no mesmo commit de qualquer mudança que altere o que está escrito aqui (nova função,
 > migration, decisão de regra, pendência resolvida ou nova).
 >
-> Última atualização: 2026-11-25
+> Última atualização: 2026-11-26
 >
 > Visão completa (histórico, decisões com o porquê, banco, desempenho): [`RELATORIO.md`](RELATORIO.md).
 
@@ -62,15 +62,16 @@ A secret key e a senha do Postgres não são usadas pelo app.
   `ficha-tipos.ts` (tipos e constantes), `estado.ts` (Estável/Ferido/Instável/Morrendo e o efeito de cada um), `supabase/` (clientes;
   `nomeCanal()` gera nomes únicos de canal Realtime).
 - `supabase/migrations/` — esquema em ordem (tabela abaixo). `supabase/diagnosticos/imagens.sql` é só leitura.
-- `public/` — `sw.js` (service worker: mostra `offline.html` sem internet e guarda as imagens do RPG), `icones/`.
+- `public/` — `sw.js` (service worker: mostra `offline.html` sem internet e guarda as imagens do RPG), `icones/`,
+  `cartas/` (as 19 artes do Compêndio em WebP: `arquetipo-*.webp` e `trauma-*.webp`).
 - `scripts/gerar-icones.mjs` — gera os ícones do PWA a partir de `scripts/icone-origem.svg`.
 
 ## Regras do jogo (confirmadas pelo usuário)
 
 > **O sistema mudou (18/11/2026)** e o **Compêndio do Sistema é a fonte oficial**: quando uma ficha antiga disser
 > outra coisa, vale o Compêndio. As regras completas e atuais estão em [`docs/SISTEMA.md`](docs/SISTEMA.md),
-> resumidas do Compêndio do Sistema e das fichas novas. A ficha já segue o sistema novo (Fase A); cartas, inventário
-> e combate ainda seguem o antigo (Fases B a D, ver Pendências).
+> resumidas do Compêndio do Sistema e das fichas novas. A ficha e as cartas já seguem o sistema novo (Fases A e B);
+> inventário e combate ainda seguem o antigo (Fases C e D, ver Pendências).
 
 - **Características e especializações:** Vigor (Força, Movimento, Furtividade, Resistência), Mental (Vasculhar,
   Percepção, Conhecimento, Atirar, Criar), Social (Lábia, Intimidação, Adestramento, Sorte, Presença). O valor de
@@ -84,6 +85,12 @@ A secret key e a senha do Postgres não são usadas pelo app.
 - **Congelamento:** passou de `limite_congelado` (de cada ficha), o personagem congela no frio.
 - **Sinergia, Proteção e raça:** Sinergia é um contador da ficha; Proteção é a coluna `defesa`; raça (Errante, Pálido,
   Sanguíneo) e os limites só o mestre muda.
+- **Cartas (`cartas.tipo`):** arquétipo (**até 3** por personagem), trauma (ativar custa **5 PE**), habilidade única
+  (**1** por personagem) e caminho (habilidade de Caminho, com `caminho` e `nivel`, paga em **Sinergia**). Os limites
+  ficam no trigger `limite_do_baralho`. Custos em `custo_pe` e `custo_sinergia`; o texto vale o do Compêndio.
+- **Usar uma carta (`usar_carta`):** o botão "Usar" aparece nas cartas com custo; dois toques (confirmar), cobra PE
+  e/ou Sinergia e avisa a Mesa ao vivo (tabela `usos_carta`). Descontos (ex.: O Inocente) o mestre ajusta à mão.
+- **Caminho da ficha:** Amor, Revolta ou Absurdo (`personagens.caminho`); só o mestre muda (aprende-se com quem já tem).
 - **Dentes:** moeda principal do RPG.
 - **Inventário:** 4 espaços. Raridades: Comum (branco), Incomum (azul), Único (roxo).
 - **Conhecimento:** lista fixa de 16 áreas; as dominantes ficam em destaque.
@@ -96,7 +103,12 @@ A secret key e a senha do Postgres não são usadas pelo app.
   em várias mesas ao mesmo tempo (`mesa_personagens`); `personagens.campanha_id` é só a mesa de origem.
   A mesa aberta fica no cookie `grimorio_mesa` e o papel (mestre/player) vale para ela.
   O mestre traz fichas de outras mesas dele (`importar_personagem`) e tira (`remover_da_mesa`).
-- **Catálogo:** itens e cartas são do mestre (`mestre_id`) e valem em todas as mesas dele.
+- **Catálogo:** itens e cartas são do mestre (`mestre_id`) e valem em todas as mesas dele. Os 12 arquétipos e os
+  7 traumas do Compêndio entram sozinhos no catálogo de cada mestre (`semear_cartas_do_compendio`: na migration da
+  Fase B e, para mestre novo, ao criar a primeira mesa). Carta antiga com o mesmo nome (ou "Trauma de X") ganha a arte,
+  o custo e o texto do Compêndio.
+- **Artes das cartas (decidido em 26/11):** ficam **embutidas no app** em `public/cartas/` (públicas, como qualquer
+  arquivo do site). A coluna `cartas.arte` aponta para o arquivo; uma imagem enviada pelo mestre fica no lugar dela.
 - **Morte:** o mestre registra (`matar_personagem`, epitáfio opcional); a ficha vai para o memorial, fica só
   leitura e pode voltar (`reviver_personagem`). O jogador sai das mesas e, para voltar, cria outro personagem.
 - **Imagens:** só o mestre envia, troca e apaga (retratos, itens, cartas); jogadores só veem. Tudo vira WebP
@@ -128,6 +140,7 @@ O usuário roda cada migration no **SQL Editor do Supabase** antes do push do c�
 | `20261030100000_limpeza_imagens` | Bucket aceita só WebP até 1 MB; fila e limpeza de imagens sem uso | sim |
 | `20261124000000_manter_vivo` | Tabela `batimentos` e RPC `manter_vivo` (aberta a anon) para o Supabase não pausar | sim |
 | `20261125000000_sistema_fase_a` | Sistema novo na ficha: Vigor, Criar, características, bônus de D20, `rolar_d100` na característica, `rolar_d20`, limiares por ficha, Sinergia, raça | sim |
+| `20261126000000_sistema_fase_b` | Cartas do sistema novo: tipo caminho (era revolta), custos em PE/Sinergia, arte, 19 cartas do Compêndio no catálogo, limites do baralho, `usar_carta` e `usos_carta`, Caminho da ficha só pelo mestre | sim |
 
 ## Estado atual
 
@@ -139,9 +152,11 @@ funções da Vercel em São Paulo, imagens guardadas no celular pelo service wor
 (esqueletos), erro, página não encontrada, listas vazias e aviso de sem internet. **Fase A do sistema novo**
 (a ficha): Vigor/Mental/Social com D100, especializações com D20 e bônus, quatro estados de vida, Sinergia,
 raça e limites por ficha. As fichas antigas foram convertidas: as características começaram pela média das
-especializações e Criar entrou com 0 — **o mestre precisa conferir e ajustar esses valores**.
+especializações e Criar entrou com 0 — **o mestre precisa conferir e ajustar esses valores**. **Fase B** (cartas):
+as 19 cartas do Compêndio com arte no catálogo de cada mestre, custos em PE/Sinergia com o botão Usar e aviso na
+Mesa, limites do baralho e Caminho da ficha escolhido pelo mestre.
 
-**Em andamento:** nada. Próxima: Fase B (cartas).
+**Em andamento:** nada. Próxima: Fase C (inventário).
 
 **Lição (24/11):** o Supabase pausou entre 16 e 19/11 mesmo com o keep-alive antigo, porque a consulta recebia
 "sem permissão" e isso não contou como uso. O batimento precisa ser uma operação que dá certo (hoje, uma escrita).
@@ -155,22 +170,24 @@ deploy da Vercel falhou. Atualizado para 16.4.6. Se um deploy falhar do nada, ro
 - As imagens guardadas no celular (na segunda abertura da ficha, as imagens aparecem na hora, sem baixar de novo).
 - A Fase A: D100 numa característica, D20 numa especialização (com bônus), Reforçar/Refazer nos dois dados,
   e o mestre editando características, bônus, limiar de Instável, limite de congelamento e raça.
+- A Fase B: as 19 cartas no Catálogo com arte, dar o 4º arquétipo (deve recusar), "Usar" num trauma (−5 PE) e
+  numa carta de Caminho (−Sinergia), o aviso na Mesa ao vivo e o Caminho no cabeçalho.
 - A ficha e a Mesa mais rápidas com as funções em São Paulo (medir na aba Rede do navegador).
 
 ## Pendências
 
 **Adaptar o app ao sistema novo** (`docs/SISTEMA.md`), em fases:
 - **A — Ficha:** no ar desde 25/11 (ver Regras do jogo).
-- **B — Cartas:** arquétipos (12, texto do Compêndio), traumas (7, ativar = 5 PE), Caminhos (Amor/Revolta/Absurdo,
-  nível, custo em Sinergia), habilidades únicas; artes das 19 cartas.
+- **B — Cartas:** no ar desde 26/11 (ver Regras do jogo).
 - **C — Inventário:** espaços por raridade, dano/bônus/criador, memórias com nome e efeito, estrelas.
 - **D — Combate na Mesa:** Grupos A e B, tiro D8/D6, dados de dano, Defender, Recuperar Foco.
 
 **Dependem do mestre / da mesa**
 - Símbolo oficial do RPG para o ícone do PWA (trocar `scripts/icone-origem.svg` e rodar `node scripts/gerar-icones.mjs`).
-- Artes: retratos e imagens de cartas e itens (o mestre sobe pelo Catálogo e por "Trocar foto").
-- Cadastro do Ivan: cartas O Cuidador, O Órfão, Trauma de Abandono, Agraciado, Incerteza Biológica;
-  itens Arma de Pressão e Ossos Pequenos.
+- Artes: retratos, imagens dos itens e das cartas que não são do Compêndio (o mestre sobe pelo Catálogo e por "Trocar foto").
+- Cadastro do Ivan: cartas Agraciado (habilidade única) e Incerteza Biológica (Caminho da Revolta, I, 1 Sinergia);
+  itens Arma de Pressão e Ossos Pequenos. O Cuidador, O Órfão e Abandono já vêm do Compêndio.
+- Habilidades de Caminho que faltam texto (Proteção de Placebo) e os efeitos do Destinatário.
 - Significado das estrelas ★☆☆☆ dos itens.
 
 **Testes do usuário**

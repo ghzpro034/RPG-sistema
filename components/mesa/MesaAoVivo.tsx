@@ -1,6 +1,6 @@
 "use client";
 
-import { Dices, LogOut, Minus, Plus, RotateCcw, Shield, Skull, TrendingDown } from "lucide-react";
+import { Dices, Flame, LogOut, Minus, Plus, RotateCcw, Shield, Skull, Sparkles, TrendingDown } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Memorial } from "@/components/mesa/Memorial";
@@ -13,7 +13,7 @@ import { Resultado } from "@/components/ficha/rolador";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { corDoEstado, estadoDe, fundoDoEstado } from "@/lib/estado";
 import { apagarImagensSemUso } from "@/lib/imagem";
-import type { Personagem, Rolagem } from "@/lib/ficha-tipos";
+import type { Personagem, Rolagem, UsoCarta } from "@/lib/ficha-tipos";
 import { EntregarItem } from "@/components/mesa/EntregarItem";
 import { HistoricoAlteracoes } from "@/components/mesa/HistoricoAlteracoes";
 import { TrazerPersonagem } from "@/components/mesa/TrazerPersonagem";
@@ -128,42 +128,97 @@ function Card({
   );
 }
 
-function FeedRolagens({ rolagens, nomes }: { rolagens: Rolagem[]; nomes: Map<string, string> }) {
+function mesclarUso(lista: UsoCarta[], uso: UsoCarta) {
+  return [uso, ...lista.filter((u) => u.id !== uso.id)].slice(0, 20);
+}
+
+const ROTULO_USO: Record<UsoCarta["tipo"], string> = {
+  arquetipo: "usou o arquétipo",
+  trauma: "ativou o trauma",
+  habilidade: "usou a habilidade",
+  caminho: "usou o Caminho",
+};
+
+const hora = (quando: string) => new Date(quando).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+
+// uma carta paga pelo jogador (trauma, Caminho…), no meio das rolagens
+function LinhaUso({ uso, nome }: { uso: UsoCarta; nome: string }) {
+  const custo = [uso.custo_pe && `−${uso.custo_pe} PE`, uso.custo_sinergia && `−${uso.custo_sinergia} Sinergia`]
+    .filter(Boolean)
+    .join(" · ");
+  const Icone = uso.tipo === "trauma" ? Flame : Sparkles;
+  return (
+    <li
+      className={cn(
+        "flex items-center gap-3 rounded-lg border px-3 py-2",
+        uso.tipo === "trauma" ? "border-sangue/60 bg-sangue/10" : "border-caminho/40 bg-card",
+      )}
+    >
+      <Icone className={cn("size-6 w-10 shrink-0", uso.tipo === "trauma" ? "text-instavel" : "text-caminho")} aria-hidden />
+      <div className="min-w-0 flex-1 leading-tight">
+        <p className="text-base">
+          <span className="font-bold">{nome}</span> <span className="text-muted-foreground">{ROTULO_USO[uso.tipo]}</span>{" "}
+          <span className="uppercase">{uso.nome}</span>
+        </p>
+        <p className="text-sm text-muted-foreground">{custo}</p>
+      </div>
+      <time className="text-sm text-muted-foreground tabular-nums" suppressHydrationWarning>
+        {hora(uso.created_at)}
+      </time>
+    </li>
+  );
+}
+
+function FeedRolagens({ rolagens, usos, nomes }: { rolagens: Rolagem[]; usos: UsoCarta[]; nomes: Map<string, string> }) {
+  // rolagens e cartas usadas, da mais nova para a mais antiga
+  const eventos = [
+    ...rolagens.map((r) => ({ tipo: "rolagem" as const, quando: r.created_at, r })),
+    ...usos.map((u) => ({ tipo: "uso" as const, quando: u.created_at, u })),
+  ]
+    .sort((a, b) => b.quando.localeCompare(a.quando))
+    .slice(0, 20);
+
   return (
     <section className="flex flex-col gap-3">
       <h2 className="flex items-center gap-2 text-lg tracking-wide">
-        <span className="size-2 animate-pulse rounded-full bg-instavel" aria-hidden /> Rolagens ao vivo
+        <span className="size-2 animate-pulse rounded-full bg-instavel" aria-hidden /> Rolagens e cartas ao vivo
       </h2>
-      {rolagens.length ? (
+      {eventos.length ? (
         <ul className="flex flex-col gap-2" aria-live="polite">
-          {rolagens.map((r) => (
-            <li key={r.id} className="flex items-center gap-3 rounded-lg border border-border bg-card px-3 py-2">
-              <Resultado rolagem={r} className="w-10 text-center text-2xl" />
-              <div className="min-w-0 flex-1 leading-tight">
-                <p className="truncate text-base">
-                  <span className="font-bold">{nomes.get(r.personagem_id) ?? "?"}</span>{" "}
-                  <span className="uppercase">{r.atributo}</span>{" "}
-                  <span className="text-muted-foreground">{r.dado === "d20" ? "D20" : `≤ ${r.alvo}`}</span>
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  {r.dado === "d20"
-                    ? `${r.resultado}${r.bonus ? ` ${r.bonus > 0 ? "+" : "−"} ${Math.abs(r.bonus)}` : ""} · você julga`
-                    : r.sucesso
-                      ? "Sucesso"
-                      : "Falha"}
-                  {r.reforcado && ` · reforçado (${r.dados?.join(" e ")})`}
-                  {r.refeitos > 0 && ` · refeito ${r.refeitos}×`}
-                </p>
-              </div>
-              {r.refeitos > 0 && <RotateCcw className="size-4 text-muted-foreground" aria-hidden />}
-              <time className="text-sm text-muted-foreground tabular-nums" suppressHydrationWarning>
-                {new Date(r.created_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
-              </time>
-            </li>
-          ))}
+          {eventos.map((e) => {
+            if (e.tipo === "uso") return <LinhaUso key={e.u.id} uso={e.u} nome={nomes.get(e.u.personagem_id) ?? "?"} />;
+            const r = e.r;
+            return (
+              <li key={r.id} className="flex items-center gap-3 rounded-lg border border-border bg-card px-3 py-2">
+                <Resultado rolagem={r} className="w-10 text-center text-2xl" />
+                <div className="min-w-0 flex-1 leading-tight">
+                  <p className="truncate text-base">
+                    <span className="font-bold">{nomes.get(r.personagem_id) ?? "?"}</span>{" "}
+                    <span className="uppercase">{r.atributo}</span>{" "}
+                    <span className="text-muted-foreground">{r.dado === "d20" ? "D20" : `≤ ${r.alvo}`}</span>
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    {r.dado === "d20"
+                      ? `${r.resultado}${r.bonus ? ` ${r.bonus > 0 ? "+" : "−"} ${Math.abs(r.bonus)}` : ""} · você julga`
+                      : r.sucesso
+                        ? "Sucesso"
+                        : "Falha"}
+                    {r.reforcado && ` · reforçado (${r.dados?.join(" e ")})`}
+                    {r.refeitos > 0 && ` · refeito ${r.refeitos}×`}
+                  </p>
+                </div>
+                {r.refeitos > 0 && <RotateCcw className="size-4 text-muted-foreground" aria-hidden />}
+                <time className="text-sm text-muted-foreground tabular-nums" suppressHydrationWarning>
+                  {hora(r.created_at)}
+                </time>
+              </li>
+            );
+          })}
         </ul>
       ) : (
-        <Vazio compacto icone={Dices} titulo="Nenhuma rolagem ainda">As rolagens dos jogadores aparecem aqui na hora.</Vazio>
+        <Vazio compacto icone={Dices} titulo="Nenhuma rolagem ainda">
+          As rolagens e as cartas usadas pelos jogadores aparecem aqui na hora.
+        </Vazio>
       )}
     </section>
   );
@@ -177,6 +232,7 @@ export function MesaAoVivo({ campanhaId, inicial }: { campanhaId: string; inicia
   const router = useRouter();
   const [personagens, setPersonagens] = useState(inicial.personagens);
   const [rolagens, setRolagens] = useState(inicial.rolagens);
+  const [usos, setUsos] = useState(inicial.usos);
   const [alteracoes, setAlteracoes] = useState(inicial.alteracoes);
   const confirmados = useRef(inicial.personagens);
   const timers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
@@ -220,6 +276,11 @@ export function MesaAoVivo({ campanhaId, inicial }: { campanhaId: string; inicia
         (payload) => {
           if (payload.eventType !== "DELETE") setRolagens((lista) => mesclarRolagem(lista, payload.new as Rolagem));
         },
+      )
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "usos_carta", filter: `campanha_id=eq.${campanhaId}` },
+        (payload) => setUsos((lista) => mesclarUso(lista, payload.new as UsoCarta)),
       )
       .on(
         "postgres_changes",
@@ -287,7 +348,7 @@ export function MesaAoVivo({ campanhaId, inicial }: { campanhaId: string; inicia
   const corrompido = personagens.length ? personagens.reduce((a, b) => (b.corrupcao > a.corrupcao ? b : a)) : null;
 
   return (
-    <div className="grid gap-8 lg:grid-cols-[1fr_340px]">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-8 lg:grid-cols-[minmax(0,1fr)_340px]">
       <div className="flex flex-col gap-5">
         {pior && corrompido && (
           <div className="grid gap-3 sm:grid-cols-2">
@@ -330,7 +391,7 @@ export function MesaAoVivo({ campanhaId, inicial }: { campanhaId: string; inicia
       </div>
       <aside className="flex flex-col gap-8">
         {/* o que mais se olha durante a sessão vem primeiro */}
-        <FeedRolagens rolagens={rolagens} nomes={nomes} />
+        <FeedRolagens rolagens={rolagens} usos={usos} nomes={nomes} />
         <EntregarItem personagens={personagens} itens={inicial.itens} />
         <HistoricoAlteracoes alteracoes={alteracoes} nomes={nomes} autores={inicial.autores} />
         <TrazerPersonagem campanhaId={campanhaId} disponiveis={inicial.disponiveis} />

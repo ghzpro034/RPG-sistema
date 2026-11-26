@@ -5,7 +5,16 @@ import { useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { TextoEditavel } from "@/components/ficha/campos";
 import { useFicha } from "@/components/ficha/contexto";
-import { BUCKET_IMAGENS, RACAS, VALIDADE_URL, type Carta, type Raca } from "@/lib/ficha-tipos";
+import {
+  BUCKET_IMAGENS,
+  CAMINHOS,
+  RACAS,
+  VALIDADE_URL,
+  nomeDoCaminho,
+  type Caminho,
+  type Carta,
+  type Raca,
+} from "@/lib/ficha-tipos";
 import { comprimirParaWebp, mensagemDeEnvio } from "@/lib/imagem";
 import { createClient } from "@/lib/supabase/client";
 
@@ -154,21 +163,32 @@ export function Cabecalho({ retratoInicial, cartas }: { retratoInicial: string |
         </div>
 
         <div className="flex flex-col gap-0.5 font-heading text-sm font-bold tracking-wide uppercase sm:text-base">
-          {editando ? (
-            <TextoEditavel
-              valor={p.caminho ?? ""}
-              aoSalvar={(caminho) => salvar({ caminho })}
-              editavel
-              rotulo="Caminho"
-              placeholder="Caminho da…"
-            />
+          {/* o Caminho se aprende com quem já o tem: só o mestre escolhe */}
+          {editando && souMestre ? (
+            <select
+              value={p.caminho ?? ""}
+              onChange={(e) => salvar({ caminho: (e.target.value || null) as Caminho | null })}
+              aria-label="Caminho"
+              className="h-10 self-start rounded-md border border-input bg-transparent px-2 font-sans text-lg font-normal normal-case"
+            >
+              <option value="">Sem Caminho</option>
+              {CAMINHOS.map((c) => (
+                <option key={c.valor} value={c.valor}>
+                  Caminho {c.valor === "amor" ? "do" : "da"} {c.nome}
+                </option>
+              ))}
+            </select>
           ) : (
-            p.caminho && <span className="text-caminho italic">{p.caminho}</span>
+            p.caminho && (
+              <span className="text-caminho italic">
+                Caminho {p.caminho === "amor" ? "do" : "da"} {nomeDoCaminho(p.caminho)}
+              </span>
+            )
           )}
           {arquetipos.length > 0 && <span>{arquetipos.map((c) => c.nome).join(" - ")}</span>}
           {traumas.map((c) => (
             <span key={c.id} className="text-instavel">
-              {c.nome}
+              {/^trauma/i.test(c.nome) ? c.nome : `Trauma de ${c.nome}`}
             </span>
           ))}
         </div>

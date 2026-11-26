@@ -10,7 +10,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { BUCKET_IMAGENS, type Carta, type ItemCatalogo, type Raridade, type TipoCarta } from "@/lib/ficha-tipos";
+import {
+  BUCKET_IMAGENS,
+  CAMINHOS,
+  nomeDoCaminho,
+  type Carta,
+  type ItemCatalogo,
+  type Raridade,
+  type TipoCarta,
+} from "@/lib/ficha-tipos";
 import { apagarImagensSemUso, enviarImagemCatalogo, mensagemDeEnvio } from "@/lib/imagem";
 import { createClient } from "@/lib/supabase/client";
 import { Vazio } from "@/components/Estados";
@@ -24,9 +32,21 @@ const RARIDADES: { valor: Raridade; rotulo: string; cor: string }[] = [
 const TIPOS: { valor: TipoCarta; rotulo: string; cor: string }[] = [
   { valor: "arquetipo", rotulo: "Arquétipo", cor: "text-ouro" },
   { valor: "trauma", rotulo: "Trauma", cor: "text-instavel" },
-  { valor: "habilidade", rotulo: "Habilidade", cor: "text-social" },
-  { valor: "revolta", rotulo: "Revolta", cor: "text-caminho" },
+  { valor: "habilidade", rotulo: "Habilidade única", cor: "text-social" },
+  { valor: "caminho", rotulo: "Caminho", cor: "text-caminho" },
 ];
+
+const ORDEM_TIPOS = TIPOS.map((t) => t.valor);
+
+// o custo que a carta cobra ao ser usada na ficha
+function textoDoCusto(c: Carta) {
+  const partes = [];
+  if (c.custo_pe) partes.push(`${c.custo_pe} PE`);
+  if (c.custo_sinergia) partes.push(`${c.custo_sinergia} Sinergia`);
+  return partes.join(" + ") || c.custo;
+}
+
+const numeroDe = (valor: FormDataEntryValue | null) => Math.max(0, Math.min(50, Math.round(Number(valor) || 0)));
 
 const SELECT = "h-10 w-full rounded-lg border border-input bg-input/30 px-2.5 text-lg";
 
@@ -52,7 +72,77 @@ function Miniatura({ url, className }: { url: string | null; className?: string 
   );
 }
 
-// Campo de imagem opcional: as artes do RPG podem entrar depois.
+// Campos da carta; Caminho e nível só aparecem nas cartas de caminho.
+function CamposCarta({ carta }: { carta: Carta | null }) {
+  const [tipo, setTipo] = useState<TipoCarta>(carta?.tipo ?? "arquetipo");
+  return (
+    <>
+      <div className="grid grid-cols-2 gap-3">
+        <Campo rotulo="Tipo">
+          <select name="tipo" value={tipo} onChange={(e) => setTipo(e.target.value as TipoCarta)} className={SELECT}>
+            {TIPOS.map((t) => (
+              <option key={t.valor} value={t.valor}>{t.rotulo}</option>
+            ))}
+          </select>
+        </Campo>
+        <Campo rotulo="Nome">
+          <Input name="nome" defaultValue={carta?.nome} required className="h-10 text-lg md:text-lg" />
+        </Campo>
+      </div>
+      {tipo === "caminho" && (
+        <div className="grid grid-cols-2 gap-3">
+          <Campo rotulo="Caminho">
+            <select name="caminho" defaultValue={carta?.caminho ?? "amor"} className={SELECT}>
+              {CAMINHOS.map((c) => (
+                <option key={c.valor} value={c.valor}>{c.nome}</option>
+              ))}
+            </select>
+          </Campo>
+          <Campo rotulo="Nível (I, II…)">
+            <Input name="nivel" defaultValue={carta?.nivel ?? ""} className="h-10 text-lg md:text-lg" />
+          </Campo>
+        </div>
+      )}
+      {/* o jogador paga isto ao tocar em "Usar" na ficha; sem custo, a carta não tem botão */}
+      <div className="grid grid-cols-2 gap-3">
+        <Campo rotulo="Custo em PE">
+          <Input
+            key={tipo}
+            name="custo_pe"
+            type="number"
+            min={0}
+            max={50}
+            defaultValue={carta?.custo_pe ?? (tipo === "trauma" ? 5 : 0)}
+            className="h-10 text-lg md:text-lg"
+          />
+        </Campo>
+        <Campo rotulo="Custo em Sinergia">
+          <Input
+            name="custo_sinergia"
+            type="number"
+            min={0}
+            max={50}
+            defaultValue={carta?.custo_sinergia ?? 0}
+            className="h-10 text-lg md:text-lg"
+          />
+        </Campo>
+      </div>
+      {carta?.custo && (
+        <Campo rotulo="Custo antigo (texto)">
+          <Input name="custo" defaultValue={carta.custo} className="h-10 text-lg md:text-lg" />
+        </Campo>
+      )}
+      <Campo rotulo="Citação">
+        <Input name="citacao" defaultValue={carta?.citacao ?? ""} className="h-10 text-lg md:text-lg" />
+      </Campo>
+      <Campo rotulo="Efeitos (um por linha)">
+        <Textarea name="efeitos" defaultValue={carta?.efeitos.join("\n") ?? ""} className="min-h-24 text-lg md:text-lg" />
+      </Campo>
+    </>
+  );
+}
+
+// Campo de imagem opcional. As cartas do Compêndio já vêm com a arte; uma imagem enviada fica no lugar dela.
 function CampoImagem({ atual, aoEscolher }: { atual: string | null; aoEscolher: (arquivo: File | null) => void }) {
   const [previa, setPrevia] = useState(atual);
   return (
@@ -121,7 +211,11 @@ export function Catalogo({
               .split("\n")
               .map((l) => l.trim())
               .filter(Boolean),
-            custo: String(form.get("custo")).trim() || null,
+            custo: String(form.get("custo") ?? "").trim() || null,
+            custo_pe: numeroDe(form.get("custo_pe")),
+            custo_sinergia: numeroDe(form.get("custo_sinergia")),
+            caminho: form.get("tipo") === "caminho" ? String(form.get("caminho")) : null,
+            nivel: form.get("tipo") === "caminho" ? String(form.get("nivel")).trim() || null : null,
           };
     if (!dados.nome) return toast.error("Dê um nome");
 
@@ -133,7 +227,9 @@ export function Catalogo({
         : await supabase.from(tabela).insert({ ...dados, mestre_id: mestreId }).select().single();
       if (error) throw error;
 
-      let linha = { ...data, imagemUrl: antigo?.imagemUrl ?? null };
+      // sem imagem enviada, a carta do Compêndio mostra a arte embutida no app
+      const arte = data.arte ? `/cartas/${data.arte}.webp` : null;
+      let linha = { ...data, imagemUrl: (antigo?.imagem_path ? antigo.imagemUrl : null) ?? arte };
       if (imagem) {
         const { caminho, url } = await enviarImagemCatalogo(supabase, tabela, mestreId, data.id, imagem);
         const troca = await supabase.from(tabela).update({ imagem_path: caminho }).eq("id", data.id);
@@ -145,7 +241,13 @@ export function Catalogo({
       const colocar = <T extends { id: string; nome: string }>(lista: T[], novo: T) =>
         [...lista.filter((x) => x.id !== novo.id), novo].sort((a, b) => a.nome.localeCompare(b.nome));
       if (edicao.tipo === "item") setItens((lista) => colocar(lista, linha as ItemCatalogo));
-      else setCartas((lista) => colocar(lista, linha as Carta));
+      else
+        setCartas((lista) =>
+          // cartas por tipo (arquétipos, traumas…) e depois pelo nome
+          colocar(lista, linha as Carta).sort(
+            (a, b) => ORDEM_TIPOS.indexOf(a.tipo) - ORDEM_TIPOS.indexOf(b.tipo) || a.nome.localeCompare(b.nome),
+          ),
+        );
       toast.success(antigo ? "Salvo" : edicao.tipo === "item" ? "Item criado" : "Carta criada");
       setEdicao(null);
     } catch (erro) {
@@ -190,7 +292,7 @@ export function Catalogo({
             <Plus /> Novo item
           </Button>
           {itens.length ? (
-            <ul className="grid gap-3 md:grid-cols-2">
+            <ul className="grid grid-cols-[minmax(0,1fr)] gap-3 md:grid-cols-2">
               {itens.map((i) => {
                 const raridade = RARIDADES.find((r) => r.valor === i.raridade);
                 return (
@@ -222,14 +324,19 @@ export function Catalogo({
             <Plus /> Nova carta
           </Button>
           {cartas.length ? (
-            <ul className="grid gap-3 md:grid-cols-2">
+            <ul className="grid grid-cols-[minmax(0,1fr)] gap-3 md:grid-cols-2">
               {cartas.map((c) => {
                 const tipo = TIPOS.find((t) => t.valor === c.tipo);
+                const custo = textoDoCusto(c);
                 return (
                   <li key={c.id} className="flex items-center gap-3 rounded-xl border border-border bg-card p-3">
                     <Miniatura url={c.imagemUrl} className="h-16 w-12" />
                     <div className="min-w-0 flex-1">
-                      <p className={cn("font-heading text-xs tracking-[0.2em] uppercase", tipo?.cor)}>{tipo?.rotulo}</p>
+                      <p className={cn("font-heading text-xs tracking-[0.2em] uppercase", tipo?.cor)}>
+                        {c.tipo === "caminho" && c.caminho ? `${tipo?.rotulo} · ${nomeDoCaminho(c.caminho)}` : tipo?.rotulo}
+                        {c.nivel && ` ${c.nivel}`}
+                        {custo && <span className="text-muted-foreground"> · {custo}</span>}
+                      </p>
                       <p className="truncate font-heading text-base font-bold uppercase">{c.nome}</p>
                       {c.citacao && <p className="truncate text-base text-muted-foreground italic">“{c.citacao}”</p>}
                     </div>
@@ -242,7 +349,7 @@ export function Catalogo({
               })}
             </ul>
           ) : (
-            <Vazio icone={Layers} titulo="Nenhuma carta ainda">Crie arquétipos, traumas, habilidades e revoltas para dar aos jogadores.</Vazio>
+            <Vazio icone={Layers} titulo="Nenhuma carta ainda">Crie arquétipos, traumas, habilidades únicas e de Caminho para dar aos jogadores.</Vazio>
           )}
         </TabsContent>
       </Tabs>
@@ -288,29 +395,7 @@ export function Catalogo({
                   </Campo>
                 </>
               ) : (
-                <>
-                  <div className="grid grid-cols-2 gap-3">
-                    <Campo rotulo="Tipo">
-                      <select name="tipo" defaultValue={edicao.valor?.tipo ?? "arquetipo"} className={SELECT}>
-                        {TIPOS.map((t) => (
-                          <option key={t.valor} value={t.valor}>{t.rotulo}</option>
-                        ))}
-                      </select>
-                    </Campo>
-                    <Campo rotulo="Custo (opcional)">
-                      <Input name="custo" defaultValue={edicao.valor?.custo ?? ""} placeholder="Ponto de Sinergia" className="h-10 text-lg md:text-lg" />
-                    </Campo>
-                  </div>
-                  <Campo rotulo="Nome">
-                    <Input name="nome" defaultValue={edicao.valor?.nome} required className="h-10 text-lg md:text-lg" />
-                  </Campo>
-                  <Campo rotulo="Citação">
-                    <Input name="citacao" defaultValue={edicao.valor?.citacao ?? ""} className="h-10 text-lg md:text-lg" />
-                  </Campo>
-                  <Campo rotulo="Efeitos (um por linha)">
-                    <Textarea name="efeitos" defaultValue={edicao.valor?.efeitos.join("\n") ?? ""} className="min-h-24 text-lg md:text-lg" />
-                  </Campo>
-                </>
+                <CamposCarta carta={edicao.valor} />
               )}
               <CampoImagem atual={edicao.valor?.imagemUrl ?? null} aoEscolher={setImagem} />
               <Button type="submit" size="lg" disabled={salvando} className="font-heading tracking-wider">

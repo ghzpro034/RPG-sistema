@@ -10,7 +10,7 @@ import {
 
 // Carregadores que servem tanto no servidor quanto no navegador (Realtime recarrega com eles).
 
-const CAMPOS_CARTA = "id, tipo, nome, citacao, efeitos, custo, imagem_path";
+const CAMPOS_CARTA = "id, tipo, nome, citacao, efeitos, custo, custo_pe, custo_sinergia, caminho, nivel, arte, imagem_path";
 const CAMPOS_ITEM = "id, nome, raridade, efeito, descricao, max_memorias, imagem_path";
 
 // Gera as URLs assinadas de várias imagens de uma vez.
@@ -23,9 +23,13 @@ export async function assinar(supabase: SupabaseClient, caminhos: (string | null
   );
 }
 
-async function comUrl<T extends { imagem_path: string | null }>(supabase: SupabaseClient, lista: T[]) {
+// a imagem enviada pelo mestre vale mais; sem ela, a carta do Compêndio usa a arte embutida no app
+async function comUrl<T extends { imagem_path: string | null; arte?: string | null }>(supabase: SupabaseClient, lista: T[]) {
   const urls = await assinar(supabase, lista.map((x) => x.imagem_path));
-  return lista.map((x) => ({ ...x, imagemUrl: x.imagem_path ? (urls.get(x.imagem_path) ?? null) : null }));
+  return lista.map((x) => ({
+    ...x,
+    imagemUrl: (x.imagem_path ? urls.get(x.imagem_path) : null) ?? (x.arte ? `/cartas/${x.arte}.webp` : null),
+  }));
 }
 
 export async function carregarCartas(supabase: SupabaseClient, personagemId: string): Promise<Carta[]> {

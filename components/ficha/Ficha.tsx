@@ -57,9 +57,9 @@ function BarraEdicao() {
   );
 }
 
-// arquétipo e trauma no Baralho; habilidade e revolta na aba própria, como no Canva
+// arquétipo e trauma no Baralho; habilidade única e habilidades de Caminho na aba própria, como no Canva
 const TIPOS_BARALHO = ["arquetipo", "trauma"] as const;
-const TIPOS_HABILIDADE = ["habilidade", "revolta"] as const;
+const TIPOS_HABILIDADE = ["habilidade", "caminho"] as const;
 
 function Conteudo({ dados }: { dados: DadosFicha }) {
   const { personagem, souMestre: mestre, morto } = useFicha();
@@ -81,7 +81,7 @@ function Conteudo({ dados }: { dados: DadosFicha }) {
           <TabsTrigger value="baralho" className="h-10 basis-[30%] px-3 text-base">Baralho</TabsTrigger>
           <TabsTrigger value="inventario" className="h-10 basis-[30%] px-3 text-base">Inventário</TabsTrigger>
           <TabsTrigger value="conhecimento" className="h-10 basis-[30%] px-3 text-base">Conhecimento</TabsTrigger>
-          <TabsTrigger value="habilidade" className="h-10 basis-[45%] px-3 text-base">Habilidade e Revolta</TabsTrigger>
+          <TabsTrigger value="habilidade" className="h-10 basis-[45%] px-3 text-base">Habilidade e Caminho</TabsTrigger>
           <TabsTrigger value="memorias" className="h-10 basis-[45%] px-3 text-base">Memórias e Graças</TabsTrigger>
         </TabsList>
         <TabsContent value="baralho">
@@ -92,6 +92,7 @@ function Conteudo({ dados }: { dados: DadosFicha }) {
             vazio="O mestre ainda não te deu nenhuma carta."
             souMestre={souMestre}
             catalogo={dados.catalogoCartas}
+            campanhaAtual={dados.campanhaAtual}
             aoMudar={ao.recarregarCartas}
           />
         </TabsContent>
@@ -103,9 +104,10 @@ function Conteudo({ dados }: { dados: DadosFicha }) {
             personagemId={personagem.id}
             cartas={ao.cartas}
             tipos={[...TIPOS_HABILIDADE]}
-            vazio="Nenhuma habilidade ou revolta ainda."
+            vazio="Nenhuma habilidade única ou de Caminho ainda."
             souMestre={souMestre}
             catalogo={dados.catalogoCartas}
+            campanhaAtual={dados.campanhaAtual}
             aoMudar={ao.recarregarCartas}
           />
           <EnganarMorte />
