@@ -4,6 +4,7 @@ import { Check, Loader2, Pencil, Skull } from "lucide-react";
 import { Atributos } from "@/components/ficha/Atributos";
 import { Divisor } from "@/components/Divisor";
 import { Baralho } from "@/components/ficha/Baralho";
+import { Combate } from "@/components/ficha/Combate";
 import { Cabecalho } from "@/components/ficha/Cabecalho";
 import { Conhecimento } from "@/components/ficha/Conhecimento";
 import { useConteudoAoVivo } from "@/components/ficha/conteudo";
@@ -73,6 +74,8 @@ function Conteudo({ dados }: { dados: DadosFicha }) {
   return (
     <>
       <Cabecalho retratoInicial={dados.retratoUrl} cartas={ao.cartas} />
+      {/* só aparece durante o combate da mesa aberta */}
+      <Combate campanhaAtual={dados.campanhaAtual} atributos={dados.atributos} />
       <Divisor />
       <Vitais />
       <Divisor />

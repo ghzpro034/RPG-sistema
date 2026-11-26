@@ -6,6 +6,7 @@ import { createContext, use, useCallback, useEffect, useMemo, useState } from "r
 import { toast } from "sonner";
 import { useFicha } from "@/components/ficha/contexto";
 import { Button } from "@/components/ui/button";
+import { COR_DO_TIRO, localDoTiro, type ModoDano } from "@/lib/combate";
 import { CUSTO_REFAZER, CUSTO_REFORCAR, type Grupo, type Rolagem } from "@/lib/ficha-tipos";
 import { createClient, nomeCanal } from "@/lib/supabase/client";
 
@@ -19,6 +20,12 @@ type Contexto = {
   rolarD100: (caracteristica: Grupo) => Promise<void>;
   /** D20 numa especialização */
   rolarD20: (atributoId: string) => Promise<void>;
+  /** tiro: D8 (pode errar) ou D6 (atirador focado / arma avançada) */
+  rolarTiro: (d6: boolean) => Promise<void>;
+  /** o dado de dano de um item do inventário */
+  rolarDano: (inventarioId: string, modo: ModoDano) => Promise<void>;
+  /** +2 PE (só Estável; O Órfão também quando Ferido) */
+  recuperarFoco: () => Promise<void>;
   refazer: () => Promise<void>;
   fechar: () => void;
 };
@@ -107,6 +114,37 @@ export function RoladorProvider({ campanhaAtual, children }: { campanhaAtual: st
   );
   const rolarD20 = useCallback((atributoId: string) => pedir("rolar_d20", { p_atributo_id: atributoId }), [pedir]);
 
+  // tiro e dano não usam o Reforçar: ele continua armado para o próximo teste
+  const pedirSemReforco = useCallback(
+    async (rpc: "rolar_tiro" | "rolar_dano", args: Record<string, unknown>) => {
+      setRolando(true);
+      const { data, error } = await supabase.rpc(rpc, { ...args, p_campanha: campanhaAtual });
+      await depoisDaRpc(data, error);
+      setRolando(false);
+    },
+    [supabase, campanhaAtual, depoisDaRpc],
+  );
+  const rolarTiro = useCallback(
+    (d6: boolean) => pedirSemReforco("rolar_tiro", { p_personagem: personagem.id, p_d6: d6 }),
+    [pedirSemReforco, personagem.id],
+  );
+  const rolarDano = useCallback(
+    (inventarioId: string, modo: ModoDano) => pedirSemReforco("rolar_dano", { p_inventario: inventarioId, p_modo: modo }),
+    [pedirSemReforco],
+  );
+
+  const recuperarFoco = useCallback(async () => {
+    setRolando(true);
+    const { data, error } = await supabase.rpc("recuperar_foco", { p_personagem: personagem.id, p_campanha: campanhaAtual });
+    setRolando(false);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success(`Foco recuperado: +${-(data as { custo_pe: number }).custo_pe} PE`);
+    await sincronizar();
+  }, [supabase, personagem.id, campanhaAtual, sincronizar]);
+
   const refazer = useCallback(async () => {
     if (!ultima) return;
     setRolando(true);
@@ -117,7 +155,20 @@ export function RoladorProvider({ campanhaAtual, children }: { campanhaAtual: st
 
   return (
     <RoladorContexto
-      value={{ reforcar, setReforcar, rolando, ultima, historico, rolarD100, rolarD20, refazer, fechar: () => setUltima(null) }}
+      value={{
+        reforcar,
+        setReforcar,
+        rolando,
+        ultima,
+        historico,
+        rolarD100,
+        rolarD20,
+        rolarTiro,
+        rolarDano,
+        recuperarFoco,
+        refazer,
+        fechar: () => setUltima(null),
+      }}
     >
       {children}
     </RoladorContexto>
@@ -145,7 +196,7 @@ export function AcoesPE() {
       </button>
       <button
         type="button"
-        disabled={!ultima || rolando || personagem.pe < CUSTO_REFAZER}
+        disabled={!ultima || ultima.dado === "dano" || rolando || personagem.pe < CUSTO_REFAZER}
         onClick={refazer}
         className="min-h-11 rounded-md border border-border px-3 text-left text-base text-muted-foreground transition-colors hover:text-foreground disabled:opacity-40"
       >
@@ -160,15 +211,37 @@ export function totalDe(rolagem: Rolagem) {
   return rolagem.dado === "d20" ? rolagem.resultado + (rolagem.bonus ?? 0) : rolagem.resultado;
 }
 
+// a cor do número: D20 dourado (o mestre julga), D100 verde/vermelho, tiro pelo local, dano vermelho
+function corDe(rolagem: Rolagem) {
+  if (rolagem.dado === "d20") return "text-ouro";
+  if (rolagem.dado === "tiro") return COR_DO_TIRO[localDoTiro(rolagem.resultado).tipo];
+  if (rolagem.dado === "dano") return "text-instavel";
+  return rolagem.sucesso ? "text-estavel" : "text-instavel";
+}
+
+/** o que vai embaixo do número: Sucesso/Falha, D20, o local do tiro ou "Dano" */
+export function rotuloDe(rolagem: Rolagem) {
+  if (rolagem.dado === "d20") return "D20";
+  if (rolagem.dado === "tiro") return localDoTiro(rolagem.resultado).local;
+  if (rolagem.dado === "dano") return "Dano";
+  return rolagem.sucesso ? "Sucesso" : "Falha";
+}
+
+/** o detalhe da linha: a conta do dano, o efeito do tiro */
+export function detalheDe(rolagem: Rolagem) {
+  if (rolagem.dado === "tiro") return `D${rolagem.alvo} · ${localDoTiro(rolagem.resultado).efeito}`;
+  if (rolagem.dado === "dano") {
+    const conta = [...(rolagem.dados ?? []), ...(rolagem.bonus ? [rolagem.bonus] : [])].join(" + ");
+    const modo = rolagem.modificadores?.find((m) => m === "Crítico" || m === "Desvantagem");
+    const textoModo = modo === "Crítico" ? "crítico (máximo)" : modo === "Desvantagem" ? "desvantagem (vale o menor)" : null;
+    return [conta, textoModo].filter(Boolean).join(" · ");
+  }
+  return null;
+}
+
 export function Resultado({ rolagem, className }: { rolagem: Rolagem; className?: string }) {
   return (
-    <span
-      className={cn(
-        "font-heading font-bold tabular-nums",
-        rolagem.dado === "d20" ? "text-ouro" : rolagem.sucesso ? "text-estavel" : "text-instavel",
-        className,
-      )}
-    >
+    <span className={cn("font-sans font-bold tabular-nums", corDe(rolagem), className)}>
       {totalDe(rolagem)}
     </span>
   );
@@ -198,13 +271,9 @@ export function PainelResultado() {
             <div className="flex items-center gap-4">
               <div className="flex flex-col items-center">
                 <Resultado rolagem={ultima} className={cn("text-5xl", rolando && "opacity-40")} />
-                {ultima.dado === "d20" ? (
-                  <span className="font-rotulo text-sm tracking-widest text-ouro uppercase">D20</span>
-                ) : (
-                  <span className={cn("font-rotulo text-sm tracking-widest uppercase", ultima.sucesso ? "text-estavel" : "text-instavel")}>
-                    {ultima.sucesso ? "Sucesso" : "Falha"}
-                  </span>
-                )}
+                <span className={cn("max-w-24 text-center font-rotulo text-sm tracking-widest uppercase", corDe(ultima))}>
+                  {rotuloDe(ultima)}
+                </span>
               </div>
               <div className="min-w-0 flex-1 text-base">
                 <p className="font-rotulo text-lg tracking-wide uppercase">
@@ -213,7 +282,8 @@ export function PainelResultado() {
                 </p>
                 {contaDoD20(ultima) && <p className="text-muted-foreground">Dado {contaDoD20(ultima)} de bônus</p>}
                 {ultima.dado === "d20" && <p className="text-muted-foreground">O mestre diz se passou.</p>}
-                {ultima.dados?.length > 1 && (
+                {detalheDe(ultima) && <p className="text-muted-foreground">{detalheDe(ultima)}</p>}
+                {ultima.dado !== "dano" && ultima.dados?.length > 1 && (
                   <p className="text-muted-foreground">
                     Reforçado: {ultima.dados.join(" e ")}, vale o {ultima.dado === "d20" ? "maior" : "menor"}
                   </p>
@@ -221,15 +291,18 @@ export function PainelResultado() {
                 {ultima.refeitos > 0 && (
                   <p className="text-muted-foreground">Refeito {ultima.refeitos}×</p>
                 )}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="mt-2"
-                  disabled={rolando || personagem.pe < CUSTO_REFAZER}
-                  onClick={refazer}
-                >
-                  <RotateCcw /> Refazer (−{CUSTO_REFAZER} PE)
-                </Button>
+                {/* o dano não se refaz */}
+                {ultima.dado !== "dano" && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="mt-2"
+                    disabled={rolando || personagem.pe < CUSTO_REFAZER}
+                    onClick={refazer}
+                  >
+                    <RotateCcw /> Refazer (−{CUSTO_REFAZER} PE)
+                  </Button>
+                )}
               </div>
               <Button variant="ghost" size="icon-lg" aria-label="Fechar resultado" onClick={fechar} className="self-start">
                 <X />
@@ -253,7 +326,9 @@ export function UltimasRolagens() {
           <li key={r.id} className="flex items-center gap-2 rounded-full border border-border px-3 py-0.5 text-base">
             <span className="uppercase">{r.atributo}</span>
             <Resultado rolagem={r} />
-            <span className="text-muted-foreground">{r.dado === "d20" ? "D20" : `/ ${r.alvo}`}</span>
+            <span className="text-muted-foreground">
+              {r.dado === "d20" ? "D20" : r.dado === "d100" ? `/ ${r.alvo}` : rotuloDe(r)}
+            </span>
             {r.reforcado && <span className="text-ouro" title="Reforçado">✦</span>}
             {r.refeitos > 0 && <RotateCcw className="size-3.5 text-muted-foreground" aria-label="Refeito" />}
           </li>

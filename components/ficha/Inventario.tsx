@@ -1,11 +1,12 @@
 "use client";
 
-import { Star, Trash2 } from "lucide-react";
+import { Dices, Star, Trash2 } from "lucide-react";
 import { cn } from "cn";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Contador } from "@/components/ficha/campos";
 import { useFicha } from "@/components/ficha/contexto";
+import { useRolador } from "@/components/ficha/rolador";
 import { Button } from "@/components/ui/button";
 import { COLUNA_ESPACOS, RARIDADES, type ItemInventario, type Raridade } from "@/lib/ficha-tipos";
 import { createClient } from "@/lib/supabase/client";
@@ -33,6 +34,7 @@ export function Estrelas({ total, acesas, className }: { total: number; acesas: 
 
 export function Inventario({ inicial }: { inicial: ItemInventario[] }) {
   const { personagem, editando, setStatus, salvarDepois, morto, souMestre } = useFicha();
+  const { rolarDano, rolando } = useRolador();
   const dentes = personagem.dentes ?? 0;
   const supabase = useMemo(() => createClient(), []);
   const [itens, setItens] = useState(inicial);
@@ -163,6 +165,34 @@ export function Inventario({ inicial }: { inicial: ItemInventario[] }) {
                     </div>
                   </div>
                   {item.descricao && <p className="text-base leading-snug text-muted-foreground">{item.descricao}</p>}
+                  {/* o dado de dano do item: normal, perna (desvantagem) ou cabeça (crítico, o máximo) */}
+                  {item.dano && !morto && !editando && (
+                    <div className="flex flex-wrap gap-2 text-foreground">
+                      <Button variant="outline" size="lg" className="h-11" disabled={rolando} onClick={() => rolarDano(id, "normal")}>
+                        <Dices /> Dano {item.dano}
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="lg"
+                        className="h-11"
+                        disabled={rolando}
+                        onClick={() => rolarDano(id, "desvantagem")}
+                        title="Tiro na perna: rola duas vezes e vale o menor"
+                      >
+                        Desvantagem
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="lg"
+                        className="h-11 text-ouro"
+                        disabled={rolando}
+                        onClick={() => rolarDano(id, "critico")}
+                        title="Tiro na cabeça: dano máximo"
+                      >
+                        Crítico
+                      </Button>
+                    </div>
+                  )}
                   {item.criador && (
                     <p className="font-rotulo text-xs tracking-[0.2em] text-muted-foreground uppercase">
                       Criado por <span className="text-foreground">{item.criador}</span>

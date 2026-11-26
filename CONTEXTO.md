@@ -4,7 +4,7 @@
 > atualize no mesmo commit de qualquer mudança que altere o que está escrito aqui (nova função,
 > migration, decisão de regra, pendência resolvida ou nova).
 >
-> Última atualização: 2026-11-27
+> Última atualização: 2026-11-26
 >
 > Visão completa (histórico, decisões com o porquê, banco, desempenho): [`RELATORIO.md`](RELATORIO.md).
 
@@ -39,7 +39,7 @@ A secret key e a senha do Postgres não são usadas pelo app.
   `params`/`searchParams` são Promises; páginas que leem cookies ficam dentro de `<Suspense>`.
 - **React 19** com React Compiler (evite `useMemo` desnecessário; hooks nunca depois de `return` condicional).
 - **Tailwind 4 + shadcn/ui** (`base-nova`, sobre `@base-ui/react`). `cn` vem do pacote `cn`.
-- **Estética das cartas e da ficha física (26/11):** fundo preto com um grão de papel bem fraco (`body::before` em
+- **Estética das cartas e da ficha física (25/11):** fundo preto com um grão de papel bem fraco (`body::before` em
   `globals.css`); títulos em **Grenze Gotisch** (`font-heading`, a serifa condensada de gravura das cartas e da ficha
   física, em caixa normal, sem `uppercase`/`tracking`); rótulos pequenos em maiúsculas em **Belleza** (`font-rotulo`,
   como "TRAUMA" e "FORÇA"); texto em Cormorant Garamond. Iniciais soltas e numerais romanos **não** usam a Grenze
@@ -59,7 +59,9 @@ A secret key e a senha do Postgres não são usadas pelo app.
 - `components/ficha/` — blocos da ficha (`Cabecalho`, `Vitais`, `Atributos`, `Baralho`, `Inventario`,
   `Conhecimento`, `EnganarMorte`, `MemoriasGracas`, `Travas`, `Companheiros`), `contexto.tsx`
   (salvar/sincronizar a ficha) e `rolador.tsx` (D100, Reforçar/Refazer, últimas rolagens).
-- `components/mesa/` — `MesaAoVivo`, `EntregarItem`, `HistoricoAlteracoes`, `TrazerPersonagem`, `Memorial`.
+- `components/mesa/` — `MesaAoVivo`, `PainelCombate` (ordem e vez), `AplicarDano`, `EntregarItem`,
+  `HistoricoAlteracoes`, `TrazerPersonagem`, `Memorial`. `components/combate.ts` tem o hook `useCombate`
+  (Mesa e ficha); `components/ficha/Combate.tsx` é o painel de combate da ficha.
 - `components/Sigilo.tsx`, `Divisor.tsx`, `Cantoneiras.tsx` — o símbolo do RPG, o ornamento entre seções e os cantos de gravura.
 - `components/Estados.tsx` — esqueletos de carregamento (`EsqueletoFicha`, `EsqueletoMesa`, `EsqueletoLista`,
   `CarregandoTela`), `Vazio` (lista vazia) e `NaoEncontrado`. `TelaDeErro.tsx` (usada pelos `error.tsx`),
@@ -78,8 +80,8 @@ A secret key e a senha do Postgres não são usadas pelo app.
 
 > **O sistema mudou (18/11/2026)** e o **Compêndio do Sistema é a fonte oficial**: quando uma ficha antiga disser
 > outra coisa, vale o Compêndio. As regras completas e atuais estão em [`docs/SISTEMA.md`](docs/SISTEMA.md),
-> resumidas do Compêndio do Sistema e das fichas novas. A ficha, as cartas e o inventário já seguem o sistema novo
-> (Fases A a C); o combate ainda segue o antigo (Fase D, ver Pendências).
+> resumidas do Compêndio do Sistema e das fichas novas. O app inteiro já segue o sistema novo (Fases A a D: ficha,
+> cartas, inventário e combate).
 
 - **Características e especializações:** Vigor (Força, Movimento, Furtividade, Resistência), Mental (Vasculhar,
   Percepção, Conhecimento, Atirar, Criar), Social (Lábia, Intimidação, Adestramento, Sorte, Presença). O valor de
@@ -99,15 +101,29 @@ A secret key e a senha do Postgres não são usadas pelo app.
 - **Usar uma carta (`usar_carta`):** o botão "Usar" aparece nas cartas com custo; dois toques (confirmar), cobra PE
   e/ou Sinergia e avisa a Mesa ao vivo (tabela `usos_carta`). Descontos (ex.: O Inocente) o mestre ajusta à mão.
 - **Caminho da ficha:** Amor, Revolta ou Absurdo (`personagens.caminho`); só o mestre muda (aprende-se com quem já tem).
+- **Combate (Fase D):** a mesa entra em combate pelo mestre (`definir_combate`). Cada personagem fica no **Grupo A ou B**
+  (`mesa_personagens.grupo`, `definir_grupo`, só o mestre). A ordem sai do banco (`sequencia_do_combate`):
+  Inimigo → 1º do A → Inimigo → 1º do B → …; **O Herói** vai primeiro no seu grupo. O mestre passa a vez
+  (`avancar_vez`, também volta); no fim da sequência começa a rodada seguinte. A ficha mostra o grupo e
+  "É a sua vez!" ao vivo (`estado_do_combate`, decidido em 26/11).
+- **Tiro (`rolar_tiro`):** D8 (1 cabeça = crítico, 2 torso, 3-4 braços, 5-6 pernas = desvantagem no dano, 7-8 erro) ou
+  D6 (atirador focado/arma avançada, sem erro). Dá para Refazer. A tabela fica em `lib/combate.ts`.
+- **Dano (`rolar_dano`):** rola o dado do item ("2D10", "D15", "D6+3"): normal, desvantagem (rola duas vezes, vale o
+  menor) ou crítico (máximo). O dano não se refaz.
+- **Defender:** atalho para o D20 de Resistência. **Aplicar dano (`aplicar_dano`, mestre):** Defendeu corta pela metade
+  (para baixo), a Proteção desconta (a não ser que esteja vulnerável), Instável com qualquer dano vai a 0, Morrendo
+  não mexe na vida (o app avisa que é morte definitiva; o mestre usa "Morreu"). Decidido em 26/11.
+- **Recuperar Foco (`recuperar_foco`):** +2 PE (até o máximo); só Estável; **O Órfão** também quando Ferido; Instável e
+  Morrendo não. Aparece na Mesa como ação (`usos_carta.tipo = 'acao'`, custo negativo = ganho). Decidido em 26/11.
 - **Dentes:** moeda principal do RPG.
 - **Inventário:** espaços **por raridade e por ficha** (`personagens.espacos_comum|incomum|unico`, padrão 4/2/1;
-  só o mestre muda, decidido em 27/11). Raridades: Comum (branco), Incomum (azul), Único (roxo). Itens iguais empilham
+  só o mestre muda, decidido em 25/11). Raridades: Comum (branco), Incomum (azul), Único (roxo). Itens iguais empilham
   no mesmo espaço; `entregar_item` recusa quando a raridade está cheia.
 - **Itens:** nome, raridade, **dano** (`dano`, ex.: "2D10"), bônus (`efeito`, ex.: "+6 de Resistência"), descrição e
   **criador** (`criador`).
 - **Memórias de arma (`memorias_item`):** cada uma tem nome, descrição e efeito, escritos pelo mestre no Catálogo.
   Limite pela raridade: **Comum 1, Incomum 3, Único 5** (`max_memorias_da_raridade`). **As estrelas ★ são as memórias**
-  (confirmado em 27/11): acesas = desbloqueadas na ficha (`inventario.memorias_desbloqueadas`). O jogador só lê o texto
+  (confirmado em 25/11): acesas = desbloqueadas na ficha (`inventario.memorias_desbloqueadas`). O jogador só lê o texto
   depois que o mestre desbloqueia.
 - **Conhecimento:** lista fixa de 16 áreas; as dominantes ficam em destaque.
 - **Enganar a morte:** vem de carta (ex.: Agraciado); fica riscado depois de usado.
@@ -122,7 +138,7 @@ A secret key e a senha do Postgres não são usadas pelo app.
   7 traumas do Compêndio entram sozinhos no catálogo de cada mestre (`semear_cartas_do_compendio`: na migration da
   Fase B e, para mestre novo, ao criar a primeira mesa). Carta antiga com o mesmo nome (ou "Trauma de X") ganha a arte,
   o custo e o texto do Compêndio.
-- **Artes das cartas (decidido em 26/11):** ficam **embutidas no app** em `public/cartas/` (públicas, como qualquer
+- **Artes das cartas (decidido em 25/11):** ficam **embutidas no app** em `public/cartas/` (públicas, como qualquer
   arquivo do site). A coluna `cartas.arte` aponta para o arquivo; uma imagem enviada pelo mestre fica no lugar dela.
 - **Morte:** o mestre registra (`matar_personagem`, epitáfio opcional); a ficha vai para o memorial, fica só
   leitura e pode voltar (`reviver_personagem`). O jogador sai das mesas e, para voltar, cria outro personagem.
@@ -157,6 +173,7 @@ O usuário roda cada migration no **SQL Editor do Supabase** antes do push do c�
 | `20261125000000_sistema_fase_a` | Sistema novo na ficha: Vigor, Criar, características, bônus de D20, `rolar_d100` na característica, `rolar_d20`, limiares por ficha, Sinergia, raça | sim |
 | `20261126000000_sistema_fase_b` | Cartas do sistema novo: tipo caminho (era revolta), custos em PE/Sinergia, arte, 19 cartas do Compêndio no catálogo, limites do baralho, `usar_carta` e `usos_carta`, Caminho da ficha só pelo mestre | sim |
 | `20261127000000_sistema_fase_c` | Inventário do sistema novo: dano e criador nos itens, `memorias_item` (nome/descrição/efeito), limite de memórias pela raridade, espaços por raridade e por ficha, `entregar_item` por raridade | sim |
+| `20261128000000_sistema_fase_d` | Combate: grupos A/B, estado do combate na mesa (rodada, vez) e a sequência no banco, `rolar_tiro`, `rolar_dano`, Refazer do tiro, `recuperar_foco`, `aplicar_dano`; rolagens aceitam tiro e dano | sim |
 
 ## Estado atual
 
@@ -172,9 +189,10 @@ especializações e Criar entrou com 0 — **o mestre precisa conferir e ajustar
 as 19 cartas do Compêndio com arte no catálogo de cada mestre, custos em PE/Sinergia com o botão Usar e aviso na
 Mesa, limites do baralho e Caminho da ficha escolhido pelo mestre. **Fase C** (inventário): espaços por raridade em
 cada ficha, dano e criador nos itens, memórias de arma com nome/história/efeito e as estrelas ★. **Visual** das cartas
-e fichas (Grenze Gotisch, Belleza, sigilo, molduras).
+e fichas (Grenze Gotisch, Belleza, sigilo, molduras). **Fase D** (combate): grupos A/B, vez controlada pelo mestre
+e vista ao vivo na ficha, tiro D8/D6, dano das armas, Defender, Recuperar Foco e aplicar dano com a conta.
 
-**Em andamento:** nada. Próxima: Fase D (combate na Mesa).
+**Em andamento:** nada. O sistema novo (Fases A a D) está todo no ar; falta testar logado com a mesa de verdade.
 
 **Lição (24/11):** o Supabase pausou entre 16 e 19/11 mesmo com o keep-alive antigo, porque a consulta recebia
 "sem permissão" e isso não contou como uso. O batimento precisa ser uma operação que dá certo (hoje, uma escrita).
@@ -188,6 +206,8 @@ deploy da Vercel falhou. Atualizado para 16.4.6. Se um deploy falhar do nada, ro
 - As imagens guardadas no celular (na segunda abertura da ficha, as imagens aparecem na hora, sem baixar de novo).
 - A Fase A: D100 numa característica, D20 numa especialização (com bônus), Reforçar/Refazer nos dois dados,
   e o mestre editando características, bônus, limiar de Instável, limite de congelamento e raça.
+- A Fase D: começar um combate na Mesa, pôr cada um no Grupo A/B, passar a vez (a ficha do jogador mostra
+  "É a sua vez!" ao vivo), atirar D8/D6, rolar o dano de uma arma, Recuperar Foco e aplicar dano com Defender.
 - A Fase C: entregar itens até encher uma raridade (deve recusar), mudar os espaços como mestre, escrever as
   memórias de uma arma no Catálogo e desbloquear na ficha (o texto aparece, a estrela acende).
 - A Fase B: as 19 cartas no Catálogo com arte, dar o 4º arquétipo (deve recusar), "Usar" num trauma (−5 PE) e
@@ -198,9 +218,9 @@ deploy da Vercel falhou. Atualizado para 16.4.6. Se um deploy falhar do nada, ro
 
 **Adaptar o app ao sistema novo** (`docs/SISTEMA.md`), em fases:
 - **A — Ficha:** no ar desde 25/11 (ver Regras do jogo).
-- **B — Cartas:** no ar desde 26/11 (ver Regras do jogo).
-- **C — Inventário:** no ar desde 27/11 (ver Regras do jogo).
-- **D — Combate na Mesa:** Grupos A e B, tiro D8/D6, dados de dano, Defender, Recuperar Foco.
+- **B — Cartas:** no ar desde 25/11 (ver Regras do jogo).
+- **C — Inventário:** no ar desde 25/11 (ver Regras do jogo).
+- **D — Combate na Mesa:** no ar desde 26/11 (ver Regras do jogo).
 
 **Dependem do mestre / da mesa**
 - Se o RPG tiver um símbolo oficial diferente do sigilo das cartas: trocar `scripts/icone-origem.svg` e `components/Sigilo.tsx`

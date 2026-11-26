@@ -106,7 +106,8 @@ export type UsoCarta = {
   personagem_id: string;
   carta_id: string | null;
   nome: string;
-  tipo: TipoCarta;
+  /** acao: Recuperar Foco (custo_pe negativo = PE ganho) */
+  tipo: TipoCarta | "acao";
   custo_pe: number;
   custo_sinergia: number;
   created_at: string;
@@ -174,7 +175,8 @@ export type Graca = {
   descricao: string | null;
 };
 
-export type Dado = "d100" | "d20";
+/** d100/d20: testes; tiro: D8 ou D6 (alvo = faces); dano: o dado do item (bonus = o fixo, resultado = o total) */
+export type Dado = "d100" | "d20" | "tiro" | "dano";
 
 export type Rolagem = {
   id: string;
@@ -195,6 +197,8 @@ export type Rolagem = {
   dados: number[];
   reforcado: boolean;
   refeitos: number;
+  /** "Reforçado", "Refeito", "D6", "Crítico", "Desvantagem" */
+  modificadores: string[];
   created_at: string;
 };
 

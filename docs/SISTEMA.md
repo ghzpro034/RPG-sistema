@@ -9,8 +9,9 @@
 > Pontos marcados com **⚠ em aberto** ainda precisam de confirmação do mestre.
 >
 > **No app:** a ficha (seções 2 e 4: características, D100/D20, estados, Sinergia, raça; 25/11) e as cartas
-> (seções 7 a 10: arquétipos, traumas, habilidades únicas e de Caminho, com as artes; 26/11) e o inventário (seção 12:
-> espaços por raridade, dano, criador, memórias de arma e estrelas; 27/11) já seguem este documento. O combate ainda não.
+> (seções 7 a 10: arquétipos, traumas, habilidades únicas e de Caminho, com as artes; 25/11) e o inventário (seção 12:
+> espaços por raridade, dano, criador, memórias de arma e estrelas; 25/11) e o combate (seções 5 e 6: grupos, vez, tiro,
+> dano, Defender, Recuperar Foco; 26/11) já seguem este documento.
 
 ---
 
@@ -229,9 +230,9 @@ Carta com citação e efeitos, uma por personagem:
   - Níveis por raridade: **Comum 1, Incomum 3, Única 5**.
   - Cada memória tem **nome, descrição e efeito**. Ex.: **Corte Seco** (Baku): "tática dos guerreiros de Griceus
     para amputar membros de forma eficaz e limpa. +10 de dano em membros".
-- **As estrelas ★ são as memórias da arma (confirmado em 27/11):** uma estrela por memória que a arma comporta;
+- **As estrelas ★ são as memórias da arma (confirmado em 25/11):** uma estrela por memória que a arma comporta;
   acesa quando a memória está desbloqueada.
-- **Espaços (decidido em 27/11):** o Compêndio não diz quantos; cada ficha tem os seus por raridade (padrão 4 Comum,
+- **Espaços (decidido em 25/11):** o Compêndio não diz quantos; cada ficha tem os seus por raridade (padrão 4 Comum,
   2 Incomum, 1 Único), e o mestre ajusta.
 
 ## 13. A Língua das Graças

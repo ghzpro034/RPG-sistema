@@ -1,6 +1,6 @@
 "use client";
 
-import { Dices, Flame, LogOut, Minus, Plus, RotateCcw, Shield, Skull, Sparkles, TrendingDown } from "lucide-react";
+import { Crosshair, Dices, Flame, LogOut, Minus, Plus, RotateCcw, Shield, Skull, Sparkles, Sword, TrendingDown, Zap } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Memorial } from "@/components/mesa/Memorial";
@@ -9,10 +9,14 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Resultado } from "@/components/ficha/rolador";
+import { useCombate } from "@/components/combate";
+import { Resultado, detalheDe, rotuloDe } from "@/components/ficha/rolador";
+import { AplicarDano } from "@/components/mesa/AplicarDano";
+import { PainelCombate } from "@/components/mesa/PainelCombate";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { corDoEstado, estadoDe, fundoDoEstado } from "@/lib/estado";
 import { apagarImagensSemUso } from "@/lib/imagem";
+import type { GrupoCombate } from "@/lib/combate";
 import type { Personagem, Rolagem, UsoCarta } from "@/lib/ficha-tipos";
 import { EntregarItem } from "@/components/mesa/EntregarItem";
 import { HistoricoAlteracoes } from "@/components/mesa/HistoricoAlteracoes";
@@ -27,14 +31,49 @@ function mesclarRolagem(lista: Rolagem[], rolagem: Rolagem) {
     .slice(0, 20);
 }
 
+// os três botões de grupo do card: A, B ou fora do combate
+function EscolherGrupo({ nome, grupo, aoEscolher }: { nome: string; grupo: GrupoCombate | null; aoEscolher: (g: GrupoCombate | null) => void }) {
+  const opcoes: { valor: GrupoCombate | null; rotulo: string }[] = [
+    { valor: "a", rotulo: "A" },
+    { valor: "b", rotulo: "B" },
+    { valor: null, rotulo: "—" },
+  ];
+  return (
+    <div className="flex items-center gap-1" role="group" aria-label={`Grupo de ${nome}`}>
+      <span className="mr-1 font-rotulo text-xs tracking-[0.2em] text-muted-foreground uppercase">Grupo</span>
+      {opcoes.map(({ valor, rotulo }) => (
+        <button
+          key={rotulo}
+          type="button"
+          aria-pressed={grupo === valor}
+          aria-label={valor ? `Grupo ${rotulo}` : "Fora dos grupos"}
+          onClick={() => grupo !== valor && aoEscolher(valor)}
+          className={cn(
+            "size-10 rounded-md border font-sans text-lg font-bold transition-colors",
+            grupo === valor ? "border-ouro bg-ouro text-primary-foreground" : "border-border text-muted-foreground hover:text-foreground",
+          )}
+        >
+          {rotulo}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 function Card({
   p,
+  grupo,
+  minhaVez,
   aoMudarVida,
+  aoMudarGrupo,
   aoTirar,
   aoMorrer,
 }: {
   p: CardPersonagem;
+  grupo: GrupoCombate | null;
+  minhaVez: boolean;
   aoMudarVida: (vida: number) => void;
+  aoMudarGrupo: (grupo: GrupoCombate | null) => void;
   aoTirar: () => void;
   aoMorrer: () => void;
 }) {
@@ -43,7 +82,7 @@ function Card({
   const porcentagem = Math.max(0, Math.min(100, (p.vida / p.vida_max) * 100));
 
   return (
-    <li className="flex flex-col gap-3 rounded-xl border border-border bg-card p-4">
+    <li className={cn("flex flex-col gap-3 rounded-xl border bg-card p-4", minhaVez ? "border-ouro shadow-[0_0_18px] shadow-ouro/25" : "border-border")}>
       <div className="flex items-center gap-3">
         <div className="h-16 w-13 shrink-0 overflow-hidden rounded-[50%] border border-white/15 bg-secondary">
           {p.retratoUrl ? (
@@ -92,6 +131,12 @@ function Card({
         ))}
       </dl>
 
+      {/* combate: o grupo e o dano com a conta do Compêndio */}
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <EscolherGrupo nome={p.nome} grupo={grupo} aoEscolher={aoMudarGrupo} />
+        <AplicarDano personagemId={p.id} nome={p.nome} protecao={p.defesa} />
+      </div>
+
       <div className="flex items-center justify-between gap-2">
         <span className="text-base text-muted-foreground">
           {p.itens} {p.itens === 1 ? "item" : "itens"}
@@ -137,24 +182,28 @@ const ROTULO_USO: Record<UsoCarta["tipo"], string> = {
   trauma: "ativou o trauma",
   habilidade: "usou a habilidade",
   caminho: "usou o Caminho",
+  acao: "fez",
 };
 
 const hora = (quando: string) => new Date(quando).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
 
 // uma carta paga pelo jogador (trauma, Caminho…), no meio das rolagens
 function LinhaUso({ uso, nome }: { uso: UsoCarta; nome: string }) {
-  const custo = [uso.custo_pe && `−${uso.custo_pe} PE`, uso.custo_sinergia && `−${uso.custo_sinergia} Sinergia`]
-    .filter(Boolean)
-    .join(" · ");
-  const Icone = uso.tipo === "trauma" ? Flame : Sparkles;
+  // custo negativo é ganho (Recuperar Foco: +2 PE)
+  const pe = uso.custo_pe > 0 ? `−${uso.custo_pe} PE` : uso.custo_pe < 0 ? `+${-uso.custo_pe} PE` : null;
+  const custo = [pe, uso.custo_sinergia && `−${uso.custo_sinergia} Sinergia`].filter(Boolean).join(" · ");
+  const Icone = uso.tipo === "trauma" ? Flame : uso.tipo === "acao" ? Zap : Sparkles;
   return (
     <li
       className={cn(
         "flex items-center gap-3 rounded-lg border px-3 py-2",
-        uso.tipo === "trauma" ? "border-sangue/60 bg-sangue/10" : "border-caminho/40 bg-card",
+        uso.tipo === "trauma" ? "border-sangue/60 bg-sangue/10" : uso.tipo === "acao" ? "border-ouro/40 bg-card" : "border-caminho/40 bg-card",
       )}
     >
-      <Icone className={cn("size-6 w-10 shrink-0", uso.tipo === "trauma" ? "text-instavel" : "text-caminho")} aria-hidden />
+      <Icone
+        className={cn("size-6 w-10 shrink-0", uso.tipo === "trauma" ? "text-instavel" : uso.tipo === "acao" ? "text-ouro" : "text-caminho")}
+        aria-hidden
+      />
       <div className="min-w-0 flex-1 leading-tight">
         <p className="text-base">
           <span className="font-bold">{nome}</span> <span className="text-muted-foreground">{ROTULO_USO[uso.tipo]}</span>{" "}
@@ -194,16 +243,22 @@ function FeedRolagens({ rolagens, usos, nomes }: { rolagens: Rolagem[]; usos: Us
                 <div className="min-w-0 flex-1 leading-tight">
                   <p className="truncate text-base">
                     <span className="font-bold">{nomes.get(r.personagem_id) ?? "?"}</span>{" "}
+                    {r.dado === "tiro" && <Crosshair className="mr-1 inline size-4 text-muted-foreground" aria-hidden />}
+                    {r.dado === "dano" && <Sword className="mr-1 inline size-4 text-instavel" aria-hidden />}
                     <span className="uppercase">{r.atributo}</span>{" "}
-                    <span className="text-muted-foreground">{r.dado === "d20" ? "D20" : `≤ ${r.alvo}`}</span>
+                    <span className="text-muted-foreground">
+                      {r.dado === "d20" ? "D20" : r.dado === "d100" ? `≤ ${r.alvo}` : rotuloDe(r)}
+                    </span>
                   </p>
                   <p className="text-sm text-muted-foreground">
                     {r.dado === "d20"
                       ? `${r.resultado}${r.bonus ? ` ${r.bonus > 0 ? "+" : "−"} ${Math.abs(r.bonus)}` : ""} · você julga`
-                      : r.sucesso
-                        ? "Sucesso"
-                        : "Falha"}
-                    {r.reforcado && ` · reforçado (${r.dados?.join(" e ")})`}
+                      : r.dado === "d100"
+                        ? r.sucesso
+                          ? "Sucesso"
+                          : "Falha"
+                        : detalheDe(r)}
+                    {r.reforcado && r.dado !== "dano" && ` · reforçado (${r.dados?.join(" e ")})`}
                     {r.refeitos > 0 && ` · refeito ${r.refeitos}×`}
                   </p>
                 </div>
@@ -236,6 +291,7 @@ export function MesaAoVivo({ campanhaId, inicial }: { campanhaId: string; inicia
   const [alteracoes, setAlteracoes] = useState(inicial.alteracoes);
   const confirmados = useRef(inicial.personagens);
   const timers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
+  const { estado: combate, recarregar: recarregarCombate } = useCombate(campanhaId);
 
   // a Mesa é a página que o mestre mais abre: aproveita para limpar as imagens que sobraram
   useEffect(() => {
@@ -250,7 +306,7 @@ export function MesaAoVivo({ campanhaId, inicial }: { campanhaId: string; inicia
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "mesa_personagens", filter: `campanha_id=eq.${campanhaId}` },
-        () => router.refresh(),
+        (payload) => payload.eventType !== "UPDATE" && router.refresh(),
       )
       .on(
         "postgres_changes",
@@ -319,6 +375,12 @@ export function MesaAoVivo({ campanhaId, inicial }: { campanhaId: string; inicia
     router.refresh();
   }
 
+  async function mudarGrupo(p: CardPersonagem, grupo: GrupoCombate | null) {
+    const { error } = await supabase.rpc("definir_grupo", { p_campanha: campanhaId, p_personagem: p.id, p_grupo: grupo });
+    if (error) return toast.error(error.message);
+    await recarregarCombate();
+  }
+
   async function tirarDaMesa(p: CardPersonagem) {
     const { error } = await supabase.rpc("remover_da_mesa", { p_personagem: p.id, p_campanha: campanhaId });
     if (error) return toast.error(error.message);
@@ -346,10 +408,13 @@ export function MesaAoVivo({ campanhaId, inicial }: { campanhaId: string; inicia
   const nomes = new Map([...inicial.memorial, ...personagens].map((p) => [p.id, p.nome]));
   const pior = personagens.length ? personagens.reduce((a, b) => (b.vida < a.vida ? b : a)) : null;
   const corrompido = personagens.length ? personagens.reduce((a, b) => (b.corrupcao > a.corrupcao ? b : a)) : null;
+  // de quem é a vez agora (o card dessa pessoa fica dourado)
+  const vezDe = combate?.sequencia[combate.vez]?.personagem_id ?? null;
 
   return (
     <div className="grid grid-cols-[minmax(0,1fr)] gap-8 lg:grid-cols-[minmax(0,1fr)_340px]">
       <div className="flex flex-col gap-5">
+        {personagens.length > 0 && <PainelCombate campanhaId={campanhaId} estado={combate} aoMudar={recarregarCombate} />}
         {pior && corrompido && (
           <div className="grid gap-3 sm:grid-cols-2">
             <p className="flex items-center gap-3 rounded-lg border border-instavel/40 bg-instavel/10 px-4 py-2 text-lg">
@@ -376,7 +441,10 @@ export function MesaAoVivo({ campanhaId, inicial }: { campanhaId: string; inicia
               <Card
                 key={p.id}
                 p={p}
+                grupo={combate?.grupos[p.id] ?? null}
+                minhaVez={Boolean(combate?.em_combate && vezDe === p.id)}
                 aoMudarVida={(vida) => mudarVida(p.id, vida)}
+                aoMudarGrupo={(grupo) => mudarGrupo(p, grupo)}
                 aoTirar={() => tirarDaMesa(p)}
                 aoMorrer={() => setMorrendo(p)}
               />
