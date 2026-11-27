@@ -113,6 +113,11 @@ A secret key e a senha do Postgres não são usadas pelo app.
 - **Defender:** atalho para o D20 de Resistência. **Aplicar dano (`aplicar_dano`, mestre):** Defendeu corta pela metade
   (para baixo), a Proteção desconta (a não ser que esteja vulnerável), Instável com qualquer dano vai a 0, Morrendo
   não mexe na vida (o app avisa que é morte definitiva; o mestre usa "Morreu"). Decidido em 26/11.
+- **Animação do dado (26/11):** enquanto o banco sorteia, o painel de resultado mostra o dado chacoalhando com
+  números da faixa dele (`DadoGirando` em `rolador.tsx`), por no mínimo 0,65 s; depois o número cai com um impacto
+  (`animate-revelar`). O resultado só entra nas últimas rolagens quando o dado para. Quem pediu menos movimento no
+  aparelho vê o resultado direto (`motion-safe:` e `menosMovimento()`). Na Mesa, rolagens e cartas novas deslizam
+  para dentro do feed (`animate-entrar`). As animações ficam no `@theme` de `globals.css`.
 - **Recuperar Foco (`recuperar_foco`):** +2 PE (até o máximo); só Estável; **O Órfão** também quando Ferido; Instável e
   Morrendo não. Aparece na Mesa como ação (`usos_carta.tipo = 'acao'`, custo negativo = ganho). Decidido em 26/11.
 - **Dentes:** moeda principal do RPG.
@@ -192,7 +197,7 @@ cada ficha, dano e criador nos itens, memórias de arma com nome/história/efeit
 e fichas (Grenze Gotisch, Belleza, sigilo, molduras). **Fase D** (combate): grupos A/B, vez controlada pelo mestre
 e vista ao vivo na ficha, tiro D8/D6, dano das armas, Defender, Recuperar Foco e aplicar dano com a conta.
 
-**Em andamento:** nada. O sistema novo (Fases A a D) está todo no ar; falta testar logado com a mesa de verdade.
+**Em andamento:** nada. O sistema novo (Fases A a D) e a animação do dado estão no ar; falta testar logado com a mesa de verdade.
 
 **Lição (24/11):** o Supabase pausou entre 16 e 19/11 mesmo com o keep-alive antigo, porque a consulta recebia
 "sem permissão" e isso não contou como uso. O batimento precisa ser uma operação que dá certo (hoje, uma escrita).
@@ -236,7 +241,6 @@ deploy da Vercel falhou. Atualizado para 16.4.6. Se um deploy falhar do nada, ro
 - Instalar o PWA num Android e num iPhone de verdade.
 
 **Melhorias opcionais**
-- Animação do dado (respeitando `prefers-reduced-motion`).
 - Testes automatizados dos fluxos principais (login, ficha, D100, mesa).
 
 **Técnicas, sem pressa**

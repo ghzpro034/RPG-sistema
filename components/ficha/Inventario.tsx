@@ -8,6 +8,7 @@ import { Contador } from "@/components/ficha/campos";
 import { useFicha } from "@/components/ficha/contexto";
 import { useRolador } from "@/components/ficha/rolador";
 import { Button } from "@/components/ui/button";
+import { facesDoDano } from "@/lib/combate";
 import { COLUNA_ESPACOS, RARIDADES, type ItemInventario, type Raridade } from "@/lib/ficha-tipos";
 import { createClient } from "@/lib/supabase/client";
 
@@ -168,7 +169,7 @@ export function Inventario({ inicial }: { inicial: ItemInventario[] }) {
                   {/* o dado de dano do item: normal, perna (desvantagem) ou cabeça (crítico, o máximo) */}
                   {item.dano && !morto && !editando && (
                     <div className="flex flex-wrap gap-2 text-foreground">
-                      <Button variant="outline" size="lg" className="h-11" disabled={rolando} onClick={() => rolarDano(id, "normal")}>
+                      <Button variant="outline" size="lg" className="h-11" disabled={rolando} onClick={() => rolarDano(id, "normal", facesDoDano(item.dano))}>
                         <Dices /> Dano {item.dano}
                       </Button>
                       <Button
@@ -176,7 +177,7 @@ export function Inventario({ inicial }: { inicial: ItemInventario[] }) {
                         size="lg"
                         className="h-11"
                         disabled={rolando}
-                        onClick={() => rolarDano(id, "desvantagem")}
+                        onClick={() => rolarDano(id, "desvantagem", facesDoDano(item.dano))}
                         title="Tiro na perna: rola duas vezes e vale o menor"
                       >
                         Desvantagem
@@ -186,7 +187,7 @@ export function Inventario({ inicial }: { inicial: ItemInventario[] }) {
                         size="lg"
                         className="h-11 text-ouro"
                         disabled={rolando}
-                        onClick={() => rolarDano(id, "critico")}
+                        onClick={() => rolarDano(id, "critico", facesDoDano(item.dano))}
                         title="Tiro na cabeça: dano máximo"
                       >
                         Crítico

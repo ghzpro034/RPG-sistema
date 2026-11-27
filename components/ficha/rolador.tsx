@@ -14,6 +14,8 @@ type Contexto = {
   reforcar: boolean;
   setReforcar: (reforcar: boolean) => void;
   rolando: boolean;
+  /** o dado girando na tela (faces), enquanto o banco sorteia; nulo quando parado */
+  girando: { faces: number } | null;
   ultima: Rolagem | null;
   historico: Rolagem[];
   /** D100 numa característica (Vigor, Mental, Social) */
@@ -22,8 +24,8 @@ type Contexto = {
   rolarD20: (atributoId: string) => Promise<void>;
   /** tiro: D8 (pode errar) ou D6 (atirador focado / arma avançada) */
   rolarTiro: (d6: boolean) => Promise<void>;
-  /** o dado de dano de um item do inventário */
-  rolarDano: (inventarioId: string, modo: ModoDano) => Promise<void>;
+  /** o dado de dano de um item do inventário (faces: para a animação, ex.: 10 no "2D10") */
+  rolarDano: (inventarioId: string, modo: ModoDano, faces?: number) => Promise<void>;
   /** +2 PE (só Estável; O Órfão também quando Ferido) */
   recuperarFoco: () => Promise<void>;
   refazer: () => Promise<void>;
@@ -45,12 +47,23 @@ function mesclar(lista: Rolagem[], rolagem: Rolagem) {
     .slice(0, 8);
 }
 
+// quanto tempo, no mínimo, o dado fica girando: o banco às vezes responde rápido demais para parecer um dado
+const GIRO_MINIMO = 650;
+
+/** quem pediu menos movimento no aparelho não vê o dado girar: o resultado aparece direto */
+function menosMovimento() {
+  return typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
+
+const esperar = (ms: number) => new Promise((pronto) => setTimeout(pronto, ms));
+
 // O dado é rolado no banco (RPC); aqui só pedimos e mostramos.
 export function RoladorProvider({ campanhaAtual, children }: { campanhaAtual: string; children: React.ReactNode }) {
   const { personagem, sincronizar } = useFicha();
   const supabase = useMemo(() => createClient(), []);
   const [reforcar, setReforcar] = useState(false);
   const [rolando, setRolando] = useState(false);
+  const [girando, setGirando] = useState<{ faces: number } | null>(null);
   const [ultima, setUltima] = useState<Rolagem | null>(null);
   const [historico, setHistorico] = useState<Rolagem[]>([]);
 
@@ -98,15 +111,29 @@ export function RoladorProvider({ campanhaAtual, children }: { campanhaAtual: st
     [sincronizar],
   );
 
-  const pedir = useCallback(
-    async (rpc: "rolar_d100" | "rolar_d20", args: Record<string, unknown>) => {
+  // gira o dado enquanto o banco sorteia; o resultado só aparece (na tela e nas últimas rolagens) quando ele para
+  const comDado = useCallback(
+    async (faces: number, pedido: () => PromiseLike<{ data: unknown; error: { message: string } | null }>) => {
+      const inicio = performance.now();
       setRolando(true);
-      const { data, error } = await supabase.rpc(rpc, { ...args, p_reforcar: reforcar, p_campanha: campanhaAtual });
-      setReforcar(false);
+      setGirando({ faces });
+      const { data, error } = await pedido();
+      if (!error && !menosMovimento()) await esperar(GIRO_MINIMO - (performance.now() - inicio));
+      setGirando(null);
       await depoisDaRpc(data, error);
       setRolando(false);
     },
-    [supabase, reforcar, campanhaAtual, depoisDaRpc],
+    [depoisDaRpc],
+  );
+
+  const pedir = useCallback(
+    async (rpc: "rolar_d100" | "rolar_d20", args: Record<string, unknown>) => {
+      await comDado(rpc === "rolar_d20" ? 20 : 100, () =>
+        supabase.rpc(rpc, { ...args, p_reforcar: reforcar, p_campanha: campanhaAtual }),
+      );
+      setReforcar(false);
+    },
+    [supabase, reforcar, campanhaAtual, comDado],
   );
   const rolarD100 = useCallback(
     (caracteristica: Grupo) => pedir("rolar_d100", { p_personagem: personagem.id, p_caracteristica: caracteristica }),
@@ -116,20 +143,17 @@ export function RoladorProvider({ campanhaAtual, children }: { campanhaAtual: st
 
   // tiro e dano não usam o Reforçar: ele continua armado para o próximo teste
   const pedirSemReforco = useCallback(
-    async (rpc: "rolar_tiro" | "rolar_dano", args: Record<string, unknown>) => {
-      setRolando(true);
-      const { data, error } = await supabase.rpc(rpc, { ...args, p_campanha: campanhaAtual });
-      await depoisDaRpc(data, error);
-      setRolando(false);
-    },
-    [supabase, campanhaAtual, depoisDaRpc],
+    (faces: number, rpc: "rolar_tiro" | "rolar_dano", args: Record<string, unknown>) =>
+      comDado(faces, () => supabase.rpc(rpc, { ...args, p_campanha: campanhaAtual })),
+    [supabase, campanhaAtual, comDado],
   );
   const rolarTiro = useCallback(
-    (d6: boolean) => pedirSemReforco("rolar_tiro", { p_personagem: personagem.id, p_d6: d6 }),
+    (d6: boolean) => pedirSemReforco(d6 ? 6 : 8, "rolar_tiro", { p_personagem: personagem.id, p_d6: d6 }),
     [pedirSemReforco, personagem.id],
   );
   const rolarDano = useCallback(
-    (inventarioId: string, modo: ModoDano) => pedirSemReforco("rolar_dano", { p_inventario: inventarioId, p_modo: modo }),
+    (inventarioId: string, modo: ModoDano, faces = 10) =>
+      pedirSemReforco(faces, "rolar_dano", { p_inventario: inventarioId, p_modo: modo }),
     [pedirSemReforco],
   );
 
@@ -147,11 +171,9 @@ export function RoladorProvider({ campanhaAtual, children }: { campanhaAtual: st
 
   const refazer = useCallback(async () => {
     if (!ultima) return;
-    setRolando(true);
-    const { data, error } = await supabase.rpc("refazer", { p_rolagem_id: ultima.id });
-    await depoisDaRpc(data, error);
-    setRolando(false);
-  }, [supabase, ultima, depoisDaRpc]);
+    const faces = ultima.dado === "d20" ? 20 : ultima.dado === "tiro" ? ultima.alvo : 100;
+    await comDado(faces, () => supabase.rpc("refazer", { p_rolagem_id: ultima.id }));
+  }, [supabase, ultima, comDado]);
 
   return (
     <RoladorContexto
@@ -159,6 +181,7 @@ export function RoladorProvider({ campanhaAtual, children }: { campanhaAtual: st
         reforcar,
         setReforcar,
         rolando,
+        girando,
         ultima,
         historico,
         rolarD100,
@@ -253,24 +276,49 @@ function contaDoD20(rolagem: Rolagem) {
   return `${rolagem.resultado} ${rolagem.bonus > 0 ? "+" : "−"} ${Math.abs(rolagem.bonus)}`;
 }
 
+// O dado chacoalhando, com números trocando dentro da faixa dele, enquanto o banco sorteia.
+function DadoGirando({ faces }: { faces: number }) {
+  const [valor, setValor] = useState(faces);
+  useEffect(() => {
+    if (menosMovimento()) return;
+    const relogio = setInterval(() => setValor(1 + Math.floor(Math.random() * faces)), 70);
+    return () => clearInterval(relogio);
+  }, [faces]);
+  return (
+    <div className="flex items-center gap-4 py-1">
+      <span
+        className="flex size-20 shrink-0 items-center justify-center rounded-2xl border-2 border-ouro bg-ouro/10 font-sans text-4xl font-bold text-ouro tabular-nums shadow-[0_0_24px] shadow-ouro/30 motion-safe:animate-chacoalhar"
+        aria-hidden
+      >
+        {valor}
+      </span>
+      <p className="flex items-center gap-2 font-rotulo text-base tracking-[0.2em] uppercase">
+        <Dices className="size-5 text-ouro motion-safe:animate-spin" aria-hidden /> Rolando o D{faces}…
+      </p>
+    </div>
+  );
+}
+
 // Painel do resultado, preso embaixo da tela para aparecer mesmo rolando a página.
 export function PainelResultado() {
   const { personagem } = useFicha();
-  const { ultima, refazer, rolando, fechar } = useRolador();
-  if (!ultima && !rolando) return null;
+  const { ultima, refazer, rolando, girando, fechar } = useRolador();
+  if (!ultima && !girando) return null;
 
   return (
     <div className="fixed inset-x-0 bottom-0 z-20 flex justify-center px-3 pb-3" role="status" aria-live="polite">
       <div className="w-full max-w-md rounded-2xl border border-white/15 bg-card/95 p-4 shadow-2xl shadow-black backdrop-blur">
-        {rolando && !ultima ? (
-          <p className="flex items-center justify-center gap-2 py-4 font-heading text-lg">
-            <Dices className="size-5 animate-spin" /> Rolando…
-          </p>
+        {girando ? (
+          <DadoGirando faces={girando.faces} />
         ) : (
           ultima && (
             <div className="flex items-center gap-4">
               <div className="flex flex-col items-center">
-                <Resultado rolagem={ultima} className={cn("text-5xl", rolando && "opacity-40")} />
+                <Resultado
+                  key={`${ultima.id}-${ultima.refeitos}`}
+                  rolagem={ultima}
+                  className="inline-block text-5xl motion-safe:animate-revelar"
+                />
                 <span className={cn("max-w-24 text-center font-rotulo text-sm tracking-widest uppercase", corDe(ultima))}>
                   {rotuloDe(ultima)}
                 </span>

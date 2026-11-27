@@ -196,7 +196,7 @@ function LinhaUso({ uso, nome }: { uso: UsoCarta; nome: string }) {
   return (
     <li
       className={cn(
-        "flex items-center gap-3 rounded-lg border px-3 py-2",
+        "flex items-center gap-3 rounded-lg border px-3 py-2 motion-safe:animate-entrar",
         uso.tipo === "trauma" ? "border-sangue/60 bg-sangue/10" : uso.tipo === "acao" ? "border-ouro/40 bg-card" : "border-caminho/40 bg-card",
       )}
     >
@@ -238,7 +238,7 @@ function FeedRolagens({ rolagens, usos, nomes }: { rolagens: Rolagem[]; usos: Us
             if (e.tipo === "uso") return <LinhaUso key={e.u.id} uso={e.u} nome={nomes.get(e.u.personagem_id) ?? "?"} />;
             const r = e.r;
             return (
-              <li key={r.id} className="flex items-center gap-3 rounded-lg border border-border bg-card px-3 py-2">
+              <li key={r.id} className="flex items-center gap-3 rounded-lg border border-border bg-card px-3 py-2 motion-safe:animate-entrar">
                 <Resultado rolagem={r} className="w-10 text-center text-2xl" />
                 <div className="min-w-0 flex-1 leading-tight">
                   <p className="truncate text-base">

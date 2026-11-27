@@ -54,3 +54,9 @@ export const COR_DO_TIRO: Record<TipoTiro, string> = {
 export type ModoDano = "normal" | "desvantagem" | "critico";
 
 export const CUSTO_FOCO = -2;
+
+/** as faces do dado de dano ("2D10" → 10, "D15+3" → 15); 10 se não der para ler */
+export function facesDoDano(dano: string | null) {
+  const faces = Number(dano?.match(/d\s*(\d+)/i)?.[1]);
+  return faces >= 2 ? faces : 10;
+}
