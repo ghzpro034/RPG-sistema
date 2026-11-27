@@ -54,6 +54,8 @@ export type DadosMesa = {
   autores: Record<string, string>;
   disponiveis: Disponivel[];
   memorial: Falecido[];
+  /** quando o servidor montou estes dados: a Mesa remonta a cada carga nova (ex.: depois de reconectar) */
+  carregadoEm: string;
 };
 
 type LinhaPersonagem = Omit<CardPersonagem, "jogador" | "retratoUrl" | "itens"> & {
@@ -64,8 +66,7 @@ type LinhaPersonagem = Omit<CardPersonagem, "jogador" | "retratoUrl" | "itens"> 
 // Tudo o que o painel do mestre mostra ao abrir; depois o Realtime mantém em dia.
 export async function carregarMesa(campanhaId: string, mestreId: string, outrasMesas: string[]): Promise<DadosMesa> {
   const supabase = await createClient();
-  const [{ data: linhas }, { data: mortos }, { data: rolagens }, { data: usos }, { data: itens }, { data: membros }, { data: deOutras }] =
-    await Promise.all([
+  const respostas = await Promise.all([
       supabase
         .from("mesa_personagens")
         .select(
@@ -88,8 +89,13 @@ export async function carregarMesa(campanhaId: string, mestreId: string, outrasM
             .select("personagem_id, personagens!inner(nome), campanhas(nome)")
             .in("campanha_id", outrasMesas)
             .is("personagens.morto_em", null)
-        : Promise.resolve({ data: [] as never[] }),
+        : Promise.resolve({ data: [] as never[], error: null }),
     ]);
+  // uma falha do banco vai para a tela de erro, em vez de parecer uma mesa vazia
+  const falha = respostas.find((r) => r.error)?.error;
+  if (falha) throw new Error(falha.message);
+  const [{ data: linhas }, { data: mortos }, { data: rolagens }, { data: usos }, { data: itens }, { data: membros }, { data: deOutras }] =
+    respostas;
 
   // sem os tipos gerados do banco, o supabase-js tipa as relações como lista
   const personagens = (linhas ?? [])
@@ -104,12 +110,13 @@ export async function carregarMesa(campanhaId: string, mestreId: string, outrasM
     .filter((p): p is LinhaMorto => Boolean(p))
     .sort((a, b) => b.morto_em.localeCompare(a.morto_em));
 
-  const [urls, { data: alteracoes }] = await Promise.all([
+  const [urls, { data: alteracoes, error: erroHistorico }] = await Promise.all([
     assinar(supabase, [...personagens, ...falecidos].map((p) => p.retrato_path)),
     aqui.size
       ? supabase.from("alteracoes").select("*").in("personagem_id", [...aqui]).order("id", { ascending: false }).limit(30)
-      : Promise.resolve({ data: [] as Alteracao[] }),
+      : Promise.resolve({ data: [] as Alteracao[], error: null }),
   ]);
+  if (erroHistorico) throw new Error(erroHistorico.message);
 
   // quem está nas outras mesas e ainda não está aqui, com o nome das mesas de onde vem
   const disponiveis = new Map<string, Disponivel>();
@@ -138,6 +145,7 @@ export async function carregarMesa(campanhaId: string, mestreId: string, outrasM
       (membros ?? []).map((m) => [m.user_id, (m.profiles as unknown as { nome: string } | null)?.nome ?? "?"]),
     ),
     disponiveis: [...disponiveis.values()].sort((a, b) => a.nome.localeCompare(b.nome)),
+    carregadoEm: new Date().toISOString(),
     memorial: falecidos.map(({ profiles, retrato_path, ...p }) => ({
       ...p,
       jogador: profiles?.nome ?? "Jogador",

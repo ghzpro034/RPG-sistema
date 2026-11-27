@@ -48,7 +48,7 @@ export function Memorial({ falecidos }: { falecidos: Falecido[] }) {
                 {f.nome}
               </p>
               <p className="text-base text-muted-foreground" suppressHydrationWarning>
-                {f.jogador} · morreu em {new Date(f.morto_em).toLocaleDateString("pt-BR")}
+                {f.jogador} · morreu em {new Date(f.morto_em).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })}
               </p>
               {f.epitafio && <p className="text-base italic">“{f.epitafio}”</p>}
               <div className="mt-1 flex flex-wrap gap-2">
@@ -56,7 +56,7 @@ export function Memorial({ falecidos }: { falecidos: Falecido[] }) {
                   Ver ficha
                 </Link>
                 {confirmando === f.id ? (
-                  <Button size="sm" onClick={() => reviver(f)} onBlur={() => setConfirmando(null)}>
+                  <Button size="sm" autoFocus onClick={() => reviver(f)} onBlur={() => setConfirmando(null)}>
                     Confirmar: trazer de volta
                   </Button>
                 ) : (

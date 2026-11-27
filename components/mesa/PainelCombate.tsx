@@ -2,7 +2,7 @@
 
 import { ChevronLeft, ChevronRight, Swords } from "lucide-react";
 import { cn } from "cn";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { NOME_GRUPO, type EstadoCombate } from "@/lib/combate";
@@ -12,15 +12,26 @@ import { createClient } from "@/lib/supabase/client";
 export function PainelCombate({
   campanhaId,
   estado,
+  erro,
   aoMudar,
 }: {
   campanhaId: string;
   estado: EstadoCombate | null;
+  /** a leitura do combate falhou: mostra o aviso em vez de "Começar combate" */
+  erro: boolean;
   aoMudar: () => Promise<void>;
 }) {
   const supabase = useMemo(() => createClient(), []);
   const [ocupado, setOcupado] = useState(false);
+  // "Encerrar" pede um segundo toque; o pedido some sozinho
+  const [encerrando, setEncerrando] = useState(false);
   const semGrupos = !estado?.sequencia.length;
+
+  useEffect(() => {
+    if (!encerrando) return;
+    const espera = setTimeout(() => setEncerrando(false), 4000);
+    return () => clearTimeout(espera);
+  }, [encerrando]);
 
   async function chamar(rpc: string, args: Record<string, unknown>) {
     setOcupado(true);
@@ -30,7 +41,22 @@ export function PainelCombate({
     await aoMudar();
   }
 
-  if (!estado?.em_combate) {
+  // sem conseguir ler o combate, não oferece "Começar" (o mestre poderia achar que caiu e recomeçar)
+  if (erro && !estado) {
+    return (
+      <section role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-instavel/40 bg-instavel/10 p-4">
+        <p className="text-base">Não consegui ler o combate desta mesa. Confira a internet.</p>
+        <Button variant="outline" size="lg" onClick={() => void aoMudar()}>
+          Tentar de novo
+        </Button>
+      </section>
+    );
+  }
+  if (!estado) {
+    return <p className="text-base text-muted-foreground" role="status">Carregando o combate…</p>;
+  }
+
+  if (!estado.em_combate) {
     return (
       <section className="moldura-carta flex flex-wrap items-center justify-between gap-3 rounded-xl bg-card p-4 text-white/40">
         <div className="text-foreground">
@@ -57,11 +83,29 @@ export function PainelCombate({
           <Swords className="size-5 text-instavel" aria-hidden /> Combate
           <span className="font-rotulo text-sm tracking-[0.2em] text-muted-foreground uppercase">Rodada {estado.rodada}</span>
         </h2>
-        <Button variant="ghost" size="lg" disabled={ocupado} onClick={() => chamar("definir_combate", { p_ativo: false })}>
-          Encerrar
-        </Button>
+        {encerrando ? (
+          <Button
+            variant="destructive"
+            size="lg"
+            autoFocus
+            disabled={ocupado}
+            onClick={() => {
+              setEncerrando(false);
+              void chamar("definir_combate", { p_ativo: false });
+            }}
+          >
+            Encerrar mesmo
+          </Button>
+        ) : (
+          <Button variant="ghost" size="lg" disabled={ocupado} onClick={() => setEncerrando(true)}>
+            Encerrar
+          </Button>
+        )}
       </div>
 
+      {erro && (
+        <p role="alert" className="text-base text-instavel">A conexão falhou; mostrando o último estado que chegou.</p>
+      )}
       {semGrupos ? (
         <p className="text-base text-foreground">Ninguém nos grupos ainda: use os botões A e B nos cards.</p>
       ) : (

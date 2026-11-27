@@ -12,8 +12,9 @@ async function Painel() {
   const campanhaId = sessao.campanha.id;
   const outrasMesas = sessao.mesas.filter((m) => m.papel === "mestre" && m.id !== campanhaId).map((m) => m.id);
   const dados = await carregarMesa(campanhaId, sessao.userId, outrasMesas);
-  // remonta quando muda quem está na mesa ou um retrato (o servidor manda os dados novos)
-  const chave = dados.personagens.map((p) => `${p.id}:${p.retrato_path}`).join("|");
+  // remonta a cada carga nova (alguém entrou, morreu, trocou o retrato, ou a Mesa reconectou):
+  // o estado da Mesa nasce dos dados do servidor
+  const chave = dados.carregadoEm;
 
   return (
     <div className="flex flex-col gap-6">

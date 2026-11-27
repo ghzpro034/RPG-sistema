@@ -11,7 +11,18 @@ type Resposta = { morrendo: boolean; antes: number; depois: number; final: numbe
 
 // Mestre: digita o dano e o app faz a conta do Compêndio (Defender corta pela metade, a Proteção desconta,
 // Instável vai a 0). Morrendo não mexe na vida: qualquer ataque é morte definitiva, e o mestre decide.
-export function AplicarDano({ personagemId, nome, protecao }: { personagemId: string; nome: string; protecao: number }) {
+export function AplicarDano({
+  personagemId,
+  nome,
+  protecao,
+  aoAplicar,
+}: {
+  personagemId: string;
+  nome: string;
+  protecao: number;
+  /** a vida que ficou no banco: a Mesa atualiza o card na hora, sem esperar o tempo real */
+  aoAplicar: (vida: number) => void;
+}) {
   const supabase = useMemo(() => createClient(), []);
   const [aberto, setAberto] = useState(false);
   const [enviando, setEnviando] = useState(false);
@@ -20,10 +31,11 @@ export function AplicarDano({ personagemId, nome, protecao }: { personagemId: st
     const dano = Math.round(Number(form.get("dano")));
     if (!dano || dano < 1) return toast.error("Digite o dano");
     setEnviando(true);
+    const defendeu = form.get("defendeu") === "on";
     const { data, error } = await supabase.rpc("aplicar_dano", {
       p_personagem: personagemId,
       p_dano: dano,
-      p_defendeu: form.get("defendeu") === "on",
+      p_defendeu: defendeu,
       p_vulneravel: form.get("vulneravel") === "on",
     });
     setEnviando(false);
@@ -32,8 +44,12 @@ export function AplicarDano({ personagemId, nome, protecao }: { personagemId: st
     if (r.morrendo) {
       toast.warning(`${nome} está Morrendo: qualquer ataque é morte definitiva. Se for o caso, use “Morreu”.`);
     } else if (r.final === 0) {
-      toast.success(`${nome} não sofreu dano (a Proteção absorveu tudo)`);
+      aoAplicar(r.depois);
+      toast.success(
+        `${nome} não sofreu dano (${(r.protecao ?? 0) > 0 ? "a Proteção absorveu tudo" : defendeu ? "a metade arredondou para 0" : "dano 0"})`,
+      );
     } else {
+      aoAplicar(r.depois);
       toast.success(
         `${nome}: −${r.final} de vida (${r.antes} → ${r.depois})${r.instavel && r.depois === 0 ? ". Estava Instável: foi a 0" : ""}`,
       );

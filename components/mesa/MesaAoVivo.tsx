@@ -68,6 +68,7 @@ function Card({
   aoMudarGrupo,
   aoTirar,
   aoMorrer,
+  aoAplicarDano,
 }: {
   p: CardPersonagem;
   grupo: GrupoCombate | null;
@@ -76,6 +77,8 @@ function Card({
   aoMudarGrupo: (grupo: GrupoCombate | null) => void;
   aoTirar: () => void;
   aoMorrer: () => void;
+  /** a vida que o Dano deixou no banco */
+  aoAplicarDano: (vida: number) => void;
 }) {
   const [confirmando, setConfirmando] = useState(false);
   const estado = estadoDe(p.vida, p.vida_max, p.limiar_instavel);
@@ -134,7 +137,7 @@ function Card({
       {/* combate: o grupo e o dano com a conta do Compêndio */}
       <div className="flex flex-wrap items-center justify-between gap-2">
         <EscolherGrupo nome={p.nome} grupo={grupo} aoEscolher={aoMudarGrupo} />
-        <AplicarDano personagemId={p.id} nome={p.nome} protecao={p.defesa} />
+        <AplicarDano personagemId={p.id} nome={p.nome} protecao={p.defesa} aoAplicar={aoAplicarDano} />
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -152,6 +155,7 @@ function Card({
           <Button
             variant="destructive"
             size="sm"
+            autoFocus
             onClick={() => {
               setConfirmando(false);
               aoTirar();
@@ -185,7 +189,9 @@ const ROTULO_USO: Record<UsoCarta["tipo"], string> = {
   acao: "fez",
 };
 
-const hora = (quando: string) => new Date(quando).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+// o servidor roda em UTC: o fuso fixo deixa a primeira carga igual ao que chega ao vivo
+const hora = (quando: string) =>
+  new Date(quando).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" });
 
 // uma carta paga pelo jogador (trauma, Caminho…), no meio das rolagens
 function LinhaUso({ uso, nome }: { uso: UsoCarta; nome: string }) {
@@ -290,8 +296,54 @@ export function MesaAoVivo({ campanhaId, inicial }: { campanhaId: string; inicia
   const [usos, setUsos] = useState(inicial.usos);
   const [alteracoes, setAlteracoes] = useState(inicial.alteracoes);
   const confirmados = useRef(inicial.personagens);
-  const timers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
-  const { estado: combate, recarregar: recarregarCombate } = useCombate(campanhaId);
+  // cliques de −/+ ainda não salvos: a diferença acumulada de cada ficha (o banco soma à vida que tem lá,
+  // então um Dano aplicado no meio não é apagado)
+  const pendentes = useRef(new Map<string, { delta: number; timer: ReturnType<typeof setTimeout> }>());
+  const { estado: combate, erro: erroCombate, recarregar: recarregarCombate } = useCombate(campanhaId);
+
+  // a vida que o banco confirmou, mais o que ainda falta salvar
+  function vidaDoServidor(id: string, vida: number) {
+    confirmados.current = confirmados.current.map((p) => (p.id === id ? { ...p, vida } : p));
+    const falta = pendentes.current.get(id)?.delta ?? 0;
+    setPersonagens((lista) =>
+      lista.map((p) => (p.id === id ? { ...p, vida: Math.max(0, Math.min(p.vida_max, vida + falta)) } : p)),
+    );
+  }
+
+  async function enviarVida(id: string) {
+    const pendente = pendentes.current.get(id);
+    if (!pendente) return;
+    pendentes.current.delete(id);
+    const { data, error } = await supabase.rpc("ajustar_vida", { p_personagem: id, p_delta: pendente.delta });
+    if (error || data === null) {
+      toast.error(error?.message ?? "Não deu para mudar a vida");
+      const confirmada = confirmados.current.find((p) => p.id === id)?.vida;
+      if (confirmada !== undefined) vidaDoServidor(id, confirmada);
+      return;
+    }
+    vidaDoServidor(id, data as number);
+  }
+
+  // ao sair da Mesa (ou ela remontar), o que estava esperando é salvo na hora, não descartado
+  useEffect(() => {
+    const lista = pendentes.current;
+    const salvarTudo = () => {
+      for (const [id, { delta, timer }] of lista) {
+        clearTimeout(timer);
+        void supabase.rpc("ajustar_vida", { p_personagem: id, p_delta: delta });
+      }
+      lista.clear();
+    };
+    // a aba ficou oculta (trocou de app no celular, minimizou): salva já, enquanto o navegador ainda deixa enviar
+    const aoOcultar = () => document.visibilityState === "hidden" && salvarTudo();
+    document.addEventListener("visibilitychange", aoOcultar);
+    window.addEventListener("pagehide", salvarTudo);
+    return () => {
+      document.removeEventListener("visibilitychange", aoOcultar);
+      window.removeEventListener("pagehide", salvarTudo);
+      salvarTudo();
+    };
+  }, [supabase]);
 
   // a Mesa é a página que o mestre mais abre: aproveita para limpar as imagens que sobraram
   useEffect(() => {
@@ -299,7 +351,18 @@ export function MesaAoVivo({ campanhaId, inicial }: { campanhaId: string; inicia
   }, [supabase]);
 
   useEffect(() => {
-    const pendentes = timers.current;
+    const esperando = pendentes.current;
+    // a conexão caiu e voltou (ou a aba ficou muito tempo escondida): o que mudou nesse meio tempo não chegou,
+    // então o servidor manda tudo de novo (a Mesa remonta com os dados novos)
+    let caiu = false;
+    let escondidaEm = 0;
+    const recarregarTudo = () => router.refresh();
+    const aoVoltarAba = () => {
+      if (document.visibilityState === "hidden") escondidaEm = Date.now();
+      else if (escondidaEm && Date.now() - escondidaEm > 30_000) recarregarTudo();
+    };
+    window.addEventListener("online", recarregarTudo);
+    document.addEventListener("visibilitychange", aoVoltarAba);
     const canal = supabase
       .channel(nomeCanal(`mesa-${campanhaId}`))
       // alguém entrou ou saiu da mesa: o servidor recarrega a lista
@@ -322,8 +385,13 @@ export function MesaAoVivo({ campanhaId, inicial }: { campanhaId: string; inicia
           const atualizar = (lista: CardPersonagem[]) =>
             lista.map((p) => (p.id === novo.id ? { ...p, ...pick(novo) } : p));
           confirmados.current = atualizar(confirmados.current);
-          // não atropela um clique do mestre que ainda vai ser salvo
-          if (!pendentes.has(novo.id)) setPersonagens(atualizar);
+          // a vida que chegou soma os cliques do mestre que ainda vão ser salvos
+          const falta = esperando.get(novo.id)?.delta ?? 0;
+          setPersonagens((lista) =>
+            atualizar(lista).map((p) =>
+              p.id === novo.id ? { ...p, vida: Math.max(0, Math.min(p.vida_max, novo.vida + falta)) } : p,
+            ),
+          );
         },
       )
       .on(
@@ -354,9 +422,13 @@ export function MesaAoVivo({ campanhaId, inicial }: { campanhaId: string; inicia
           }
         },
       )
-      .subscribe();
+      .subscribe((status) => {
+        if (status === "SUBSCRIBED" && caiu) recarregarTudo();
+        else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") caiu = true;
+      });
     return () => {
-      pendentes.forEach(clearTimeout);
+      window.removeEventListener("online", recarregarTudo);
+      document.removeEventListener("visibilitychange", aoVoltarAba);
       void supabase.removeChannel(canal);
     };
   }, [supabase, campanhaId, ids, router]);
@@ -388,26 +460,25 @@ export function MesaAoVivo({ campanhaId, inicial }: { campanhaId: string; inicia
     router.refresh();
   }
 
+  // espera os cliques seguidos em − e + e manda a diferença de uma vez
   function mudarVida(id: string, vida: number) {
+    const atual = personagens.find((p) => p.id === id);
+    if (!atual) return;
+    const anterior = pendentes.current.get(id);
+    clearTimeout(anterior?.timer);
+    pendentes.current.set(id, {
+      delta: (anterior?.delta ?? 0) + (vida - atual.vida),
+      timer: setTimeout(() => void enviarVida(id), 500),
+    });
     setPersonagens((lista) => lista.map((p) => (p.id === id ? { ...p, vida } : p)));
-    clearTimeout(timers.current.get(id));
-    timers.current.set(
-      id,
-      setTimeout(async () => {
-        timers.current.delete(id);
-        const { error } = await supabase.from("personagens").update({ vida }).eq("id", id);
-        if (error) {
-          toast.error(error.message);
-          setPersonagens(confirmados.current);
-        }
-      }, 500),
-    );
   }
 
   // o histórico também cita quem já está no memorial
   const nomes = new Map([...inicial.memorial, ...personagens].map((p) => [p.id, p.nome]));
-  const pior = personagens.length ? personagens.reduce((a, b) => (b.vida < a.vida ? b : a)) : null;
-  const corrompido = personagens.length ? personagens.reduce((a, b) => (b.corrupcao > a.corrupcao ? b : a)) : null;
+  const feridos = personagens.filter((p) => p.vida < p.vida_max);
+  const pior = feridos.length ? feridos.reduce((a, b) => (b.vida / b.vida_max < a.vida / a.vida_max ? b : a)) : null;
+  const corrompidos = personagens.filter((p) => p.corrupcao > 0);
+  const corrompido = corrompidos.length ? corrompidos.reduce((a, b) => (b.corrupcao > a.corrupcao ? b : a)) : null;
   // de quem é a vez agora (o card dessa pessoa fica dourado)
   const vezDe = combate?.sequencia[combate.vez]?.personagem_id ?? null;
 
@@ -418,9 +489,13 @@ export function MesaAoVivo({ campanhaId, inicial }: { campanhaId: string; inicia
       className="grid grid-cols-[minmax(0,1fr)] gap-6 md:grid-cols-[minmax(0,1fr)_300px] lg:grid-cols-[minmax(0,1fr)_340px] lg:gap-8 2xl:grid-cols-[minmax(0,1fr)_400px]"
     >
       <div className="flex flex-col gap-5">
-        {personagens.length > 0 && <PainelCombate campanhaId={campanhaId} estado={combate} aoMudar={recarregarCombate} />}
-        {pior && corrompido && (
+        {/* com a mesa vazia em combate, o painel continua para dar para encerrar */}
+        {(personagens.length > 0 || combate?.em_combate) && (
+          <PainelCombate campanhaId={campanhaId} estado={combate} erro={erroCombate} aoMudar={recarregarCombate} />
+        )}
+        {(pior || corrompido) && (
           <div className="grid gap-3 sm:grid-cols-2">
+            {pior && (
             <p className="flex items-center gap-3 rounded-lg border border-instavel/40 bg-instavel/10 px-4 py-2 text-lg">
               <TrendingDown className="size-5 text-instavel" aria-hidden />
               <span>
@@ -430,6 +505,8 @@ export function MesaAoVivo({ campanhaId, inicial }: { campanhaId: string; inicia
                 </span>
               </span>
             </p>
+            )}
+            {corrompido && (
             <p className="flex items-center gap-3 rounded-lg border border-corrupcao/40 bg-corrupcao/10 px-4 py-2 text-lg">
               <Skull className="size-5 text-corrupcao" aria-hidden />
               <span>
@@ -437,6 +514,7 @@ export function MesaAoVivo({ campanhaId, inicial }: { campanhaId: string; inicia
                 <span className="text-muted-foreground">({corrompido.corrupcao})</span>
               </span>
             </p>
+            )}
           </div>
         )}
         {personagens.length ? (
@@ -451,6 +529,7 @@ export function MesaAoVivo({ campanhaId, inicial }: { campanhaId: string; inicia
                 aoMudarGrupo={(grupo) => mudarGrupo(p, grupo)}
                 aoTirar={() => tirarDaMesa(p)}
                 aoMorrer={() => setMorrendo(p)}
+                aoAplicarDano={(vida) => vidaDoServidor(p.id, vida)}
               />
             ))}
           </ul>

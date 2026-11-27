@@ -114,7 +114,10 @@ A secret key e a senha do Postgres não são usadas pelo app.
   (`mesa_personagens.grupo`, `definir_grupo`, só o mestre). A ordem sai do banco (`sequencia_do_combate`):
   Inimigo → 1º do A → Inimigo → 1º do B → …; **O Herói** vai primeiro no seu grupo. O mestre passa a vez
   (`avancar_vez`, também volta); no fim da sequência começa a rodada seguinte. A ficha mostra o grupo e
-  "É a sua vez!" ao vivo (`estado_do_combate`, decidido em 26/11).
+  "É a sua vez!" ao vivo (`estado_do_combate`, decidido em 26/11). A vez guarda **de quem** é
+  (`campanhas.combate_vez_de` + `combate_vez_inimigo`, posição calculada por `vez_atual`): se alguém morre, troca de
+  grupo ou sai no meio do combate, a vez continua com a mesma pessoa. "Começar" não zera um combate em andamento;
+  "Encerrar" pede confirmação. Quem morre sai do grupo (trigger `morte_sai_do_combate`).
 - **Tiro (`rolar_tiro`):** D8 (1 cabeça = crítico, 2 torso, 3-4 braços, 5-6 pernas = desvantagem no dano, 7-8 erro) ou
   D6 (atirador focado/arma avançada, sem erro). Dá para Refazer. A tabela fica em `lib/combate.ts`.
 - **Dano (`rolar_dano`):** rola o dado do item ("2D10", "D15", "D6+3"): normal, desvantagem (rola duas vezes, vale o
@@ -163,6 +166,11 @@ A secret key e a senha do Postgres não são usadas pelo app.
   libera `connect-src` para a URL do Supabase.
   Nas políticas do Storage, leia o caminho com `string_to_array` (como `retrato_personagem()`), não com
   `storage.foldername()` dentro de funções — isso já causou erro de RLS.
+- **Mesa ao vivo (auditoria de 27/11):** o −/+ de vida espera 0,5 s e manda a **diferença** (`ajustar_vida`), então um
+  Dano no meio não é apagado; ao sair da Mesa ou ocultar a aba, o que estava esperando é salvo na hora. A Mesa remonta
+  a cada carga do servidor (`carregadoEm` é a `key`) e recarrega tudo quando a conexão volta (`online`, Realtime
+  reconectado) ou depois de 30 s com a aba oculta. Erro do banco vai para a tela de erro (não parece mesa vazia).
+  Horários em `America/Sao_Paulo` (o servidor está em UTC).
 - **Gastar PE** só por RPC (`security definer` + `set_config('grimorio.rpc','on',true)`), por causa do trigger de travas.
 - **PWA:** instalável no celular; o ícone é o sigilo dourado das cartas (gerado por `scripts/gerar-icones.mjs`).
 
@@ -188,6 +196,7 @@ O usuário roda cada migration no **SQL Editor do Supabase** antes do push do c�
 | `20261126000000_sistema_fase_b` | Cartas do sistema novo: tipo caminho (era revolta), custos em PE/Sinergia, arte, 19 cartas do Compêndio no catálogo, limites do baralho, `usar_carta` e `usos_carta`, Caminho da ficha só pelo mestre | sim |
 | `20261127000000_sistema_fase_c` | Inventário do sistema novo: dano e criador nos itens, `memorias_item` (nome/descrição/efeito), limite de memórias pela raridade, espaços por raridade e por ficha, `entregar_item` por raridade | sim |
 | `20261128000000_sistema_fase_d` | Combate: grupos A/B, estado do combate na mesa (rodada, vez) e a sequência no banco, `rolar_tiro`, `rolar_dano`, Refazer do tiro, `recuperar_foco`, `aplicar_dano`; rolagens aceitam tiro e dano | sim |
+| `20261129000000_mesa_correcoes` | Auditoria da Mesa: a vez guarda a pessoa (`combate_vez_de`, `vez_atual`, `marcar_vez`), "Começar" não zera combate em andamento, morte sai do grupo, `ajustar_vida` (−/+ por diferença) | sim |
 
 ## Estado atual
 
@@ -206,7 +215,7 @@ cada ficha, dano e criador nos itens, memórias de arma com nome/história/efeit
 e fichas (Grenze Gotisch, Belleza, sigilo, molduras). **Fase D** (combate): grupos A/B, vez controlada pelo mestre
 e vista ao vivo na ficha, tiro D8/D6, dano das armas, Defender, Recuperar Foco e aplicar dano com a conta.
 
-**Em andamento:** nada. O sistema novo (Fases A a D), a animação do dado e a auditoria de celular e PC estão no ar; falta testar logado com a mesa de verdade.
+**Em andamento:** nada. As correções da auditoria da Mesa estão no ar; as funcionalidades sugeridas estão em Pendências.
 
 **Lição (24/11):** o Supabase pausou entre 16 e 19/11 mesmo com o keep-alive antigo, porque a consulta recebia
 "sem permissão" e isso não contou como uso. O batimento precisa ser uma operação que dá certo (hoje, uma escrita).
@@ -248,6 +257,16 @@ deploy da Vercel falhou. Atualizado para 16.4.6. Se um deploy falhar do nada, ro
 
 **Testes do usuário**
 - Instalar o PWA num Android e num iPhone de verdade.
+
+**Funcionalidades sugeridas pela auditoria da Mesa (27/11), em ordem de valor**
+- Julgar o D20 (✓/✗ que o jogador vê) e pedir teste com CD.
+- Inimigos de verdade no combate (nome, vida, Proteção; dano neles; nome na ordem).
+- Efeitos que duram rodadas (Vulnerável, Indefeso, Rigidez, Injustiça, marca da Humilhação), que somem sozinhos.
+- −/+ de PE, Sinergia, Corrupção e Congelamento no card; ações para todos (Frio +1, Descanso — confirmar a regra).
+- Curar (com O Cuidador: +5 e +2 PE); Subir de Nível Cósmico; Briga 1v1; dar dentes pela Mesa;
+  O Cuidador vê a vida dos colegas na ficha.
+- Defeitos menores que ficaram: nomes "?" de quem saiu, foco ao fechar o Dano, nomes repetidos em "Entregar item",
+  "N itens" conta espaços, `aria-live` do histórico, fechar a aba no mesmo instante de um clique de vida.
 
 **Melhorias opcionais**
 - Testes automatizados dos fluxos principais (login, ficha, D100, mesa).

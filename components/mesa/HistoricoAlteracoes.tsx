@@ -99,7 +99,7 @@ export function HistoricoAlteracoes({
                 {a.autor_id && <span className="text-muted-foreground"> · {autores[a.autor_id] ?? "?"}</span>}
               </span>
               <time className="shrink-0 text-sm text-muted-foreground tabular-nums" suppressHydrationWarning>
-                {new Date(a.created_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                {new Date(a.created_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" })}
               </time>
             </li>
           ))}
