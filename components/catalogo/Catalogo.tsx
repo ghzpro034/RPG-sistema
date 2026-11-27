@@ -392,21 +392,23 @@ export function Catalogo({
               {itens.map((i) => {
                 const raridade = RARIDADES.find((r) => r.valor === i.raridade);
                 return (
-                  <li key={i.id} className="flex items-center gap-3 rounded-xl border border-border bg-card p-3">
-                    <Miniatura url={i.imagemUrl} className="size-16" />
+                  <li key={i.id} className="flex items-center gap-2 rounded-xl border border-border bg-card p-3 sm:gap-3">
+                    <Miniatura url={i.imagemUrl} className="size-12 sm:size-16" />
                     <div className="min-w-0 flex-1">
-                      <p className={cn("truncate font-rotulo text-base font-bold uppercase", raridade?.cor)}>{i.nome}</p>
-                      <p className="truncate text-base text-muted-foreground">
+                      <p className={cn("line-clamp-2 font-rotulo text-base font-bold break-words uppercase", raridade?.cor)}>{i.nome}</p>
+                      <p className="line-clamp-2 text-base leading-snug text-muted-foreground">
                         {raridade?.rotulo}
                         {i.dano && ` · ${i.dano} de dano`}
                         {i.efeito && ` · ${i.efeito}`}
                       </p>
                       <Estrelas total={i.max_memorias} acesas={0} />
                     </div>
-                    <Button variant="ghost" size="icon-lg" aria-label={`Editar ${i.nome}`} onClick={() => abrir({ tipo: "item", valor: i })}>
-                      <Pencil />
-                    </Button>
-                    <BotaoApagar tabela="itens" x={i} />
+                    <div className="flex shrink-0 flex-col items-end sm:flex-row sm:items-center">
+                      <Button variant="ghost" size="icon-lg" aria-label={`Editar ${i.nome}`} onClick={() => abrir({ tipo: "item", valor: i })}>
+                        <Pencil />
+                      </Button>
+                      <BotaoApagar tabela="itens" x={i} />
+                    </div>
                   </li>
                 );
               })}
@@ -426,21 +428,23 @@ export function Catalogo({
                 const tipo = TIPOS.find((t) => t.valor === c.tipo);
                 const custo = textoDoCusto(c);
                 return (
-                  <li key={c.id} className="flex items-center gap-3 rounded-xl border border-border bg-card p-3">
-                    <Miniatura url={c.imagemUrl} className="h-16 w-12" />
+                  <li key={c.id} className="flex items-center gap-2 rounded-xl border border-border bg-card p-3 sm:gap-3">
+                    <Miniatura url={c.imagemUrl} className="h-14 w-10 sm:h-16 sm:w-12" />
                     <div className="min-w-0 flex-1">
                       <p className={cn("font-rotulo text-xs tracking-[0.2em] uppercase", tipo?.cor)}>
                         {c.tipo === "caminho" && c.caminho ? `${tipo?.rotulo} · ${nomeDoCaminho(c.caminho)}` : tipo?.rotulo}
                         {c.nivel && ` ${c.nivel}`}
                         {custo && <span className="text-muted-foreground"> · {custo}</span>}
                       </p>
-                      <p className="truncate font-rotulo text-base font-bold uppercase">{c.nome}</p>
-                      {c.citacao && <p className="truncate text-base text-muted-foreground italic">“{c.citacao}”</p>}
+                      <p className="line-clamp-2 font-rotulo text-base font-bold break-words uppercase">{c.nome}</p>
+                      {c.citacao && <p className="line-clamp-2 text-base leading-snug text-muted-foreground italic">“{c.citacao}”</p>}
                     </div>
-                    <Button variant="ghost" size="icon-lg" aria-label={`Editar ${c.nome}`} onClick={() => abrir({ tipo: "carta", valor: c })}>
-                      <Pencil />
-                    </Button>
-                    <BotaoApagar tabela="cartas" x={c} />
+                    <div className="flex shrink-0 flex-col items-end sm:flex-row sm:items-center">
+                      <Button variant="ghost" size="icon-lg" aria-label={`Editar ${c.nome}`} onClick={() => abrir({ tipo: "carta", valor: c })}>
+                        <Pencil />
+                      </Button>
+                      <BotaoApagar tabela="cartas" x={c} />
+                    </div>
                   </li>
                 );
               })}
@@ -473,9 +477,11 @@ export function Catalogo({
                 <CamposCarta carta={edicao.valor} />
               )}
               <CampoImagem atual={edicao.valor?.imagemUrl ?? null} aoEscolher={setImagem} />
-              <Button type="submit" size="lg" disabled={salvando} className="font-heading">
-                {salvando ? "Salvando…" : "Salvar"}
-              </Button>
+              <div className="sticky -bottom-4 z-10 -mx-4 border-t border-border bg-popover px-4 pt-3 pb-4">
+                <Button type="submit" size="lg" disabled={salvando} className="h-11 w-full font-heading">
+                  {salvando ? "Salvando…" : "Salvar"}
+                </Button>
+              </div>
             </form>
           )}
         </DialogContent>

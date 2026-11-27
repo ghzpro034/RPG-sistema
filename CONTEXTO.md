@@ -4,7 +4,7 @@
 > atualize no mesmo commit de qualquer mudança que altere o que está escrito aqui (nova função,
 > migration, decisão de regra, pendência resolvida ou nova).
 >
-> Última atualização: 2026-11-26
+> Última atualização: 2026-11-27
 >
 > Visão completa (histórico, decisões com o porquê, banco, desempenho): [`RELATORIO.md`](RELATORIO.md).
 
@@ -47,6 +47,12 @@ A secret key e a senha do Postgres não são usadas pelo app.
 - **Sigilo** (`components/Sigilo.tsx`): o símbolo das cartas, em SVG com `currentColor`; aparece no login, no topo e
   é o ícone do PWA (`scripts/icone-origem.svg`). `Divisor` é o "— ✤ —" entre seções; `Cantoneiras` são os cantos de
   gravura da ficha física; a utility `moldura-carta` faz a borda dupla das cartas.
+- **Celular e PC (auditoria de 27/11, de 320 a 1920 px):** nada pode rolar para o lado nem ficar cortado com "…" em
+  nenhuma largura (nomes longos quebram em até 2 linhas com `line-clamp-2`). Alvos de toque com pelo menos 44 px no
+  celular (`pointer-coarse:size-11` nos botões de − e +; abas `h-11`). Na fonte gótica, "D" (de D100, D20) e numerais
+  romanos saem em `font-sans`/`font-rotulo`, porque o D da Grenze parece "Đ". iPhone: `viewportFit: "cover"` e as
+  margens seguras (`env(safe-area-inset-*)`) no `body` e no painel do dado. O topo e o conteúdo usam o mesmo
+  `max-w-6xl`. No topo do mestre, no celular, Painel, Catálogo e Sair viram ícones.
 - Interface, código (nomes de funções e variáveis) e comentários **em português**.
 - **Regras e permissões ficam no banco** (RLS, RPC, trigger), nunca só no front.
 
@@ -197,7 +203,7 @@ cada ficha, dano e criador nos itens, memórias de arma com nome/história/efeit
 e fichas (Grenze Gotisch, Belleza, sigilo, molduras). **Fase D** (combate): grupos A/B, vez controlada pelo mestre
 e vista ao vivo na ficha, tiro D8/D6, dano das armas, Defender, Recuperar Foco e aplicar dano com a conta.
 
-**Em andamento:** nada. O sistema novo (Fases A a D) e a animação do dado estão no ar; falta testar logado com a mesa de verdade.
+**Em andamento:** nada. O sistema novo (Fases A a D), a animação do dado e as correções da auditoria de celular e PC estão no ar; falta testar logado com a mesa de verdade.
 
 **Lição (24/11):** o Supabase pausou entre 16 e 19/11 mesmo com o keep-alive antigo, porque a consulta recebia
 "sem permissão" e isso não contou como uso. O batimento precisa ser uma operação que dá certo (hoje, uma escrita).

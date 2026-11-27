@@ -161,11 +161,11 @@ function Card({
             Tirar mesmo
           </Button>
         ) : (
-          <Button variant="ghost" size="sm" onClick={() => setConfirmando(true)}>
+          <Button variant="ghost" size="sm" className="h-10" onClick={() => setConfirmando(true)}>
             <LogOut /> Tirar da mesa
           </Button>
         )}
-        <Button variant="ghost" size="sm" className="text-instavel" onClick={aoMorrer}>
+        <Button variant="ghost" size="sm" className="h-10 text-instavel" onClick={aoMorrer}>
           <Skull /> Morreu
         </Button>
       </div>
@@ -241,7 +241,7 @@ function FeedRolagens({ rolagens, usos, nomes }: { rolagens: Rolagem[]; usos: Us
               <li key={r.id} className="flex items-center gap-3 rounded-lg border border-border bg-card px-3 py-2 motion-safe:animate-entrar">
                 <Resultado rolagem={r} className="w-10 text-center text-2xl" />
                 <div className="min-w-0 flex-1 leading-tight">
-                  <p className="truncate text-base">
+                  <p className="text-base leading-snug">
                     <span className="font-bold">{nomes.get(r.personagem_id) ?? "?"}</span>{" "}
                     {r.dado === "tiro" && <Crosshair className="mr-1 inline size-4 text-muted-foreground" aria-hidden />}
                     {r.dado === "dano" && <Sword className="mr-1 inline size-4 text-instavel" aria-hidden />}
@@ -436,7 +436,7 @@ export function MesaAoVivo({ campanhaId, inicial }: { campanhaId: string; inicia
           </div>
         )}
         {personagens.length ? (
-          <ul className="grid gap-4 xl:grid-cols-2">
+          <ul className="grid gap-4 md:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
             {personagens.map((p) => (
               <Card
                 key={p.id}

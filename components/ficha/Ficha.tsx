@@ -83,13 +83,15 @@ function Conteudo({ dados }: { dados: DadosFicha }) {
       <Divisor />
 
       <Tabs defaultValue="baralho" className="gap-4">
-        {/* no celular as abas quebram em linhas: todas ficam à vista, sem rolar para o lado */}
-        <TabsList className="h-auto! w-full flex-wrap gap-1">
-          <TabsTrigger value="baralho" className="h-10 basis-[30%] px-3 text-base">Baralho</TabsTrigger>
-          <TabsTrigger value="inventario" className="h-10 basis-[30%] px-3 text-base">Inventário</TabsTrigger>
-          <TabsTrigger value="conhecimento" className="h-10 basis-[30%] px-3 text-base">Conhecimento</TabsTrigger>
-          <TabsTrigger value="habilidade" className="h-10 basis-[45%] px-3 text-base">Habilidade e Caminho</TabsTrigger>
-          <TabsTrigger value="memorias" className="h-10 basis-[45%] px-3 text-base">Memórias e Graças</TabsTrigger>
+        {/* todas as abas à vista, sem rolar para o lado: 2 colunas no celular, 3 no tablet, uma linha no PC */}
+        <TabsList className="grid! h-auto! w-full grid-cols-2 gap-1 sm:grid-cols-3 lg:flex! lg:flex-nowrap">
+          <TabsTrigger value="baralho" className="h-11 px-3 text-base lg:flex-1">Baralho</TabsTrigger>
+          <TabsTrigger value="inventario" className="h-11 px-3 text-base lg:flex-1">Inventário</TabsTrigger>
+          <TabsTrigger value="conhecimento" className="h-11 px-3 text-base lg:flex-1">Conhecimento</TabsTrigger>
+          <TabsTrigger value="habilidade" className="h-11 px-3 text-base lg:flex-1">Habilidade e Caminho</TabsTrigger>
+          <TabsTrigger value="memorias" className="col-span-2 h-11 px-3 text-base sm:col-span-2 lg:flex-1">
+            Memórias e Graças
+          </TabsTrigger>
         </TabsList>
         <TabsContent value="baralho">
           <Baralho

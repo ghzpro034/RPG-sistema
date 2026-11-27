@@ -12,7 +12,8 @@ async function Usuario() {
 export default function MesaLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
-      <header className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-4 py-2 sm:py-3">
+      <header className="border-b border-border px-4 py-2 sm:py-3">
+        <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-2">
         <Link href="/" className="flex shrink-0 items-center gap-2 text-ouro">
           <Sigilo className="size-7 sm:size-8" />
           <span className="font-rotulo text-xs leading-tight tracking-[0.2em] uppercase sm:text-sm sm:tracking-[0.3em]">
@@ -23,6 +24,7 @@ export default function MesaLayout({ children }: { children: React.ReactNode }) 
         <Suspense>
           <Usuario />
         </Suspense>
+        </div>
       </header>
       <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-4 py-6">{children}</main>
     </>

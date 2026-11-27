@@ -224,7 +224,7 @@ export function Inventario({ inicial }: { inicial: ItemInventario[] }) {
                 <li
                   key={`vazio-${n}`}
                   className={cn(
-                    "flex min-h-24 items-center justify-center rounded-xl border-2 border-dashed text-base text-muted-foreground/60",
+                    "flex min-h-14 items-center justify-center rounded-xl border-2 border-dashed text-base text-muted-foreground/60",
                     raridade.borda,
                   )}
                 >

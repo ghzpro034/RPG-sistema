@@ -104,7 +104,7 @@ export function Cabecalho({ retratoInicial, cartas }: { retratoInicial: string |
               type="button"
               onClick={() => arquivo.current?.click()}
               disabled={enviando}
-              className="absolute inset-x-1 bottom-3 flex min-h-11 items-center justify-center gap-1.5 rounded-md bg-background/85 text-base backdrop-blur hover:bg-background sm:inset-x-6 sm:bottom-6"
+              className="absolute inset-x-1 top-1/2 flex min-h-11 -translate-y-1/2 items-center justify-center gap-1.5 rounded-md bg-background/85 text-base backdrop-blur hover:bg-background sm:inset-x-6"
             >
               {enviando ? <Loader2 className="size-4 animate-spin" /> : <Camera className="size-4" />}
               {enviando ? "Enviando…" : "Trocar foto"}
@@ -144,7 +144,7 @@ export function Cabecalho({ retratoInicial, cartas }: { retratoInicial: string |
               value={p.raca ?? ""}
               onChange={(e) => salvar({ raca: (e.target.value || null) as Raca | null })}
               aria-label="Raça"
-              className="mt-2 h-10 rounded-md border border-input bg-transparent px-2 text-lg"
+              className="mt-2 h-11 w-full max-w-60 min-w-0 rounded-md border border-input bg-transparent px-2 text-lg"
             >
               <option value="">Raça não definida</option>
               {RACAS.map((r) => (
@@ -169,7 +169,7 @@ export function Cabecalho({ retratoInicial, cartas }: { retratoInicial: string |
               value={p.caminho ?? ""}
               onChange={(e) => salvar({ caminho: (e.target.value || null) as Caminho | null })}
               aria-label="Caminho"
-              className="h-10 self-start rounded-md border border-input bg-transparent px-2 font-sans text-lg font-normal normal-case"
+              className="h-11 w-full max-w-72 min-w-0 self-start rounded-md border border-input bg-transparent px-2 font-sans text-lg font-normal normal-case"
             >
               <option value="">Sem Caminho</option>
               {CAMINHOS.map((c) => (

@@ -1,4 +1,4 @@
-import { ChevronsUpDown } from "lucide-react";
+import { BookOpen, ChevronsUpDown, LayoutDashboard } from "lucide-react";
 import Link from "next/link";
 import { BotaoSair } from "@/components/BotaoSair";
 import { buttonVariants } from "@/components/ui/button";
@@ -11,7 +11,7 @@ export function Topo({ mesa, papel, nome }: { mesa: string | null; papel: Papel 
       {mesa && (
         <Link
           href="/mesas"
-          className={buttonVariants({ variant: "outline", size: "sm", className: "h-10 max-w-44 min-w-0 sm:h-8 sm:max-w-60" })}
+          className={buttonVariants({ variant: "outline", size: "sm", className: "h-11 max-w-36 min-w-0 sm:h-8 sm:max-w-60" })}
         >
           <span className="truncate">{mesa}</span>
           <ChevronsUpDown className="text-muted-foreground" />
@@ -19,11 +19,14 @@ export function Topo({ mesa, papel, nome }: { mesa: string | null; papel: Papel 
       )}
       {papel === "mestre" && (
         <nav className="flex items-center" aria-label="Mestre">
-          <Link href="/mesa" className={buttonVariants({ variant: "ghost", size: "sm", className: "h-10 sm:h-8" })}>
-            Painel
+          {/* no celular só os ícones, para o topo caber numa linha; o nome fica para leitores de tela */}
+          <Link href="/mesa" className={buttonVariants({ variant: "ghost", size: "sm", className: "h-11 min-w-11 sm:h-8 sm:min-w-0" })}>
+            <LayoutDashboard className="sm:hidden" aria-hidden />
+            <span className="sr-only sm:not-sr-only">Painel</span>
           </Link>
-          <Link href="/catalogo" className={buttonVariants({ variant: "ghost", size: "sm", className: "h-10 sm:h-8" })}>
-            Catálogo
+          <Link href="/catalogo" className={buttonVariants({ variant: "ghost", size: "sm", className: "h-11 min-w-11 sm:h-8 sm:min-w-0" })}>
+            <BookOpen className="sm:hidden" aria-hidden />
+            <span className="sr-only sm:not-sr-only">Catálogo</span>
           </Link>
         </nav>
       )}

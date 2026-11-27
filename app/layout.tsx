@@ -36,6 +36,8 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: "#000000",
+  // ocupa a tela toda no iPhone; as margens seguras (entalhe, barra de gestos) ficam em globals.css e no painel do dado
+  viewportFit: "cover",
   colorScheme: "dark",
 };
 

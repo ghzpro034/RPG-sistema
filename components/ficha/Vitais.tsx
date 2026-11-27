@@ -38,7 +38,7 @@ export function Vitais() {
       {/* Vida: − e + sempre à mão, é o que mais muda durante a sessão */}
       <div className="flex flex-col gap-3">
         <div className="flex items-center gap-3">
-          <div className="flex size-20 shrink-0 items-center justify-center rounded-full border-4 border-sangue bg-sangue/50 shadow-[0_0_24px] shadow-sangue/40">
+          <div className="flex size-16 shrink-0 items-center justify-center rounded-full border-4 border-sangue bg-sangue/50 shadow-[0_0_24px] shadow-sangue/40 min-[360px]:size-20">
             <HeartPulse className="size-10 text-pergaminho" aria-hidden />
           </div>
           <div className="flex flex-col items-start gap-2">
@@ -53,7 +53,7 @@ export function Vitais() {
                 <Minus />
               </Button>
               <span
-                className="min-w-24 rounded-full bg-sangue px-4 py-1 text-center font-heading text-2xl tabular-nums"
+                className="min-w-20 rounded-full bg-sangue px-3 py-1 text-center font-heading text-2xl tabular-nums min-[360px]:min-w-24 min-[360px]:px-4"
                 aria-live="polite"
               >
                 {p.vida}/{p.vida_max}

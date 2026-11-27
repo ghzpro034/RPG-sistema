@@ -306,7 +306,11 @@ export function PainelResultado() {
   if (!ultima && !girando) return null;
 
   return (
-    <div className="fixed inset-x-0 bottom-0 z-20 flex justify-center px-3 pb-3" role="status" aria-live="polite">
+    <div
+      className="fixed inset-x-0 bottom-0 z-20 flex justify-center px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
+      role="status"
+      aria-live="polite"
+    >
       <div className="w-full max-w-md rounded-2xl border border-white/15 bg-card/95 p-4 shadow-2xl shadow-black backdrop-blur">
         {girando ? (
           <DadoGirando faces={girando.faces} />

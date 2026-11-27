@@ -231,7 +231,7 @@ export function MemoriasGracas({
     <div className="grid gap-10 lg:grid-cols-[1fr_auto]">
       <section className="flex flex-col gap-4">
         <h2 className="text-2xl tracking-wide">
-          Memórias <span className="text-ouro">&amp;</span>
+          Memórias <span className="hidden text-ouro lg:inline">&amp;</span>
         </h2>
         {comMemorias.length ? (
           <ul className="flex flex-col gap-8">

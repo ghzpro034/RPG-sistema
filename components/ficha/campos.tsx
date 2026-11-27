@@ -75,7 +75,7 @@ export function Contador({
   desabilitado?: boolean;
   tamanho?: "md" | "lg";
 }) {
-  const botao = tamanho === "lg" ? "size-11" : "size-9";
+  const botao = tamanho === "lg" ? "size-11" : "size-9 pointer-coarse:size-11";
   return (
     <div className="flex items-center gap-2">
       <Button

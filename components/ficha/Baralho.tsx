@@ -200,7 +200,7 @@ export function Baralho({
         </p>
       )}
       {visiveis.length ? (
-        <ul className="grid gap-8 lg:grid-cols-2">
+        <ul className="grid gap-8 md:grid-cols-2">
           {visiveis.map((c) => {
             const estilo = ESTILO[c.tipo];
             const temCusto = c.custo_pe > 0 || c.custo_sinergia > 0;

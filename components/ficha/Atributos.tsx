@@ -141,7 +141,9 @@ export function Atributos({ inicial }: { inicial: Atributo[] }) {
     <section className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl tracking-wide">Jogue um D100</h2>
+          <h2 className="text-2xl tracking-wide">
+            Jogue um <span className="font-sans font-bold">D100</span>
+          </h2>
           <p className="text-lg leading-snug text-muted-foreground">
             Ação geral: tire menos que a característica. Especialização: jogue um D20.
           </p>
@@ -153,7 +155,7 @@ export function Atributos({ inicial }: { inicial: Atributo[] }) {
         <LosangoPE />
       </div>
 
-      <div className="grid gap-x-6 gap-y-6 sm:grid-cols-3">
+      <div className={cn("grid gap-x-6 gap-y-6", podeEditar ? "lg:grid-cols-3" : "sm:grid-cols-3")}>
         {GRUPOS.map(({ grupo, titulo, texto, circulo, borda }) => (
           <div key={grupo} className="flex flex-col gap-2">
             {/* a característica: o número grande, rola o D100 */}
@@ -186,13 +188,13 @@ export function Atributos({ inicial }: { inicial: Atributo[] }) {
                   {personagem[grupo]}
                 </span>
                 <span className={cn("font-rotulo text-lg tracking-[0.2em] uppercase", texto)}>{titulo}</span>
-                <span className="ml-auto font-heading text-xs text-muted-foreground">D100</span>
+                <span className="ml-auto font-rotulo text-xs tracking-widest text-muted-foreground">D100</span>
               </button>
             )}
 
             {/* as especializações: rolam o D20 e somam o bônus */}
             {/* editando: uma por linha, com o valor, o nome e o bônus alinhados */}
-            <ul className={cn("grid gap-x-2 gap-y-1", podeEditar ? "grid-cols-1" : "grid-cols-2 sm:grid-cols-1")}>
+            <ul className={cn("grid gap-x-2 gap-y-1", podeEditar ? "grid-cols-1" : "grid-cols-1 min-[360px]:grid-cols-2 sm:grid-cols-1")}>
               {atributos
                 .filter((a) => a.grupo === grupo)
                 .map((a) => (
@@ -202,7 +204,8 @@ export function Atributos({ inicial }: { inicial: Atributo[] }) {
                         <CampoNumero valor={a.valor} rotulo={a.nome} aoSalvar={(t) => salvarEspecializacao(a.id, "valor", t)} />
                         <span className="min-w-0 flex-1 truncate font-rotulo text-base tracking-wide uppercase">{a.nome}</span>
                         <label className="flex shrink-0 items-center gap-1 text-sm text-muted-foreground">
-                          bônus
+                          {/* em tela muito estreita a palavra sai e o nome ganha espaço; o campo tem rótulo próprio */}
+                          <span className="hidden min-[360px]:inline">bônus</span>
                           <CampoNumero
                             valor={a.bonus}
                             rotulo={`Bônus de D20 em ${a.nome}`}
