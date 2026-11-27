@@ -9,7 +9,7 @@ import { RARIDADES } from "@/lib/ficha-tipos";
 import type { DadosMesa } from "@/lib/mesa";
 import { createClient } from "@/lib/supabase/client";
 
-const SELECT = "h-10 w-full rounded-lg border border-input bg-input/30 px-2.5 text-lg";
+const SELECT = "h-10 pointer-coarse:h-11 w-full rounded-lg border border-input bg-input/30 px-2.5 text-lg";
 
 // Mestre entrega um item do catálogo; a RPC respeita os espaços da raridade (de cada ficha) e empilha iguais.
 export function EntregarItem({

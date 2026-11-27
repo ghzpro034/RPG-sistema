@@ -2,7 +2,7 @@
 
 import { ImageIcon, Layers, Package, Pencil, Plus, Trash2 } from "lucide-react";
 import { cn } from "cn";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -51,7 +51,7 @@ function textoDoCusto(c: Carta) {
 
 const numeroDe = (valor: FormDataEntryValue | null) => Math.max(0, Math.min(50, Math.round(Number(valor) || 0)));
 
-const SELECT = "h-10 w-full rounded-lg border border-input bg-input/30 px-2.5 text-lg";
+const SELECT = "h-10 pointer-coarse:h-11 w-full rounded-lg border border-input bg-input/30 px-2.5 text-lg";
 
 function Campo({ rotulo, children }: { rotulo: string; children: React.ReactNode }) {
   return (
@@ -121,6 +121,7 @@ function CamposItem({ item }: { item: ItemCatalogo | null }) {
         <Input name="criador" defaultValue={item?.criador ?? ""} className="h-10 text-lg md:text-lg" />
       </Campo>
       {/* memória sem nome fica em branco na ficha ("Memória II"); o jogador só vê o texto depois que o mestre desbloqueia */}
+      <div className="grid gap-3 lg:grid-cols-2">
       {Array.from({ length: memorias }, (_, n) => {
         const atual = item?.memorias.find((m) => m.ordem === n + 1);
         return (
@@ -128,10 +129,11 @@ function CamposItem({ item }: { item: ItemCatalogo | null }) {
             <legend className="px-1 font-rotulo text-xs tracking-[0.2em] text-incomum uppercase">Memória {ROMANOS[n]}</legend>
             <Input name={`memoria_nome_${n + 1}`} defaultValue={atual?.nome ?? ""} placeholder="Nome (ex.: Corte Seco)" className="h-10 text-lg md:text-lg" />
             <Textarea name={`memoria_descricao_${n + 1}`} defaultValue={atual?.descricao ?? ""} placeholder="A história da memória" className="min-h-16 text-lg md:text-lg" />
-            <Input name={`memoria_efeito_${n + 1}`} defaultValue={atual?.efeito ?? ""} placeholder="Efeito (ex.: +10 de dano em membros)" className="h-10 text-lg md:text-lg" />
+            <Input name={`memoria_efeito_${n + 1}`} defaultValue={atual?.efeito ?? ""} placeholder="Efeito (ex.: +10 de dano)" className="h-10 text-lg md:text-lg" />
           </fieldset>
         );
       })}
+      </div>
     </>
   );
 }
@@ -209,20 +211,39 @@ function CamposCarta({ carta }: { carta: Carta | null }) {
 }
 
 // Campo de imagem opcional. As cartas do Compêndio já vêm com a arte; uma imagem enviada fica no lugar dela.
-function CampoImagem({ atual, aoEscolher }: { atual: string | null; aoEscolher: (arquivo: File | null) => void }) {
+function CampoImagem({
+  atual,
+  aoEscolher,
+  carta = false,
+}: {
+  atual: string | null;
+  aoEscolher: (arquivo: File | null) => void;
+  /** carta: miniatura no formato da carta (retangular), para não cortar a arte */
+  carta?: boolean;
+}) {
   const [previa, setPrevia] = useState(atual);
+  const [nome, setNome] = useState<string | null>(null);
+  const arquivo = useRef<HTMLInputElement>(null);
   return (
     <Campo rotulo="Imagem (opcional)">
       <div className="flex items-center gap-3">
-        <Miniatura url={previa} className="size-16" />
-        <Input
+        <Miniatura url={previa} className={carta ? "h-16 w-10" : "size-16"} />
+        <div className="flex min-w-0 flex-1 flex-col items-start gap-1">
+          <Button type="button" variant="outline" size="lg" onClick={() => arquivo.current?.click()}>
+            <ImageIcon /> {previa ? "Trocar imagem" : "Escolher imagem"}
+          </Button>
+          {nome && <span className="w-full truncate text-sm text-muted-foreground">{nome}</span>}
+        </div>
+        <input
+          ref={arquivo}
           type="file"
           accept="image/*"
-          className="h-10 text-base"
+          className="hidden"
           onChange={(e) => {
-            const arquivo = e.target.files?.[0] ?? null;
-            aoEscolher(arquivo);
-            setPrevia(arquivo ? URL.createObjectURL(arquivo) : atual);
+            const escolhido = e.target.files?.[0] ?? null;
+            aoEscolher(escolhido);
+            setNome(escolhido?.name ?? null);
+            setPrevia(escolhido ? URL.createObjectURL(escolhido) : atual);
           }}
         />
       </div>
@@ -456,7 +477,7 @@ export function Catalogo({
       </Tabs>
 
       <Dialog open={edicao !== null} onOpenChange={(aberto) => !aberto && setEdicao(null)}>
-        <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-lg">
+        <DialogContent className={cn("max-h-[90dvh] overflow-y-auto sm:max-w-lg", edicao?.tipo === "item" && "lg:max-w-3xl")}>
           <DialogHeader>
             <DialogTitle className="text-xl">
               {edicao?.valor ? "Editar" : "Novo"} {edicao?.tipo === "item" ? "item" : "carta"}
@@ -476,7 +497,7 @@ export function Catalogo({
               ) : (
                 <CamposCarta carta={edicao.valor} />
               )}
-              <CampoImagem atual={edicao.valor?.imagemUrl ?? null} aoEscolher={setImagem} />
+              <CampoImagem atual={edicao.valor?.imagemUrl ?? null} aoEscolher={setImagem} carta={edicao.tipo === "carta"} />
               <div className="sticky -bottom-4 z-10 -mx-4 border-t border-border bg-popover px-4 pt-3 pb-4">
                 <Button type="submit" size="lg" disabled={salvando} className="h-11 w-full font-heading">
                   {salvando ? "Salvando…" : "Salvar"}

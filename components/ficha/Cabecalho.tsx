@@ -80,7 +80,7 @@ export function Cabecalho({ retratoInicial, cartas }: { retratoInicial: string |
               aoSalvar={(nivel) => salvar({ nivel })}
               editavel
               rotulo="Nível Cósmico"
-              campoClassName="h-9 w-10 border-0 bg-transparent px-0 text-center font-sans text-lg font-bold"
+              campoClassName="h-9 w-10 border-0 bg-transparent px-0 text-center font-sans text-lg font-bold pointer-coarse:min-h-0"
             />
           ) : (
             p.nivel

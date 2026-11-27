@@ -230,7 +230,7 @@ export function Atributos({ inicial }: { inicial: Atributo[] }) {
                         >
                           {a.valor}
                         </span>
-                        <span className="truncate font-rotulo text-[0.8rem] uppercase sm:text-base sm:tracking-wide">
+                        <span className="truncate font-rotulo text-[0.8rem] uppercase min-[400px]:text-sm sm:text-base sm:tracking-wide">
                           {a.nome}
                         </span>
                         {a.bonus !== 0 && (

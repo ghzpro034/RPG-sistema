@@ -69,7 +69,7 @@ function DarCarta({
         value={escolhida}
         onChange={(e) => setEscolhida(e.target.value)}
         aria-label="Carta do catálogo"
-        className="h-10 min-w-0 flex-1 rounded-lg border border-input bg-input/30 px-2.5 text-lg"
+        className="h-10 pointer-coarse:h-11 min-w-0 flex-1 rounded-lg border border-input bg-input/30 px-2.5 text-lg"
       >
         <option value="">Escolha uma carta…</option>
         {disponiveis.map((c) => (
@@ -135,7 +135,7 @@ function UsarCarta({ carta, campanhaAtual }: { carta: Carta; campanhaAtual: stri
       <Button
         size="lg"
         variant="outline"
-        className="h-10 self-start"
+        className="h-10 self-start pointer-coarse:h-11"
         disabled={Boolean(falta)}
         onClick={() => setConfirmando(true)}
       >

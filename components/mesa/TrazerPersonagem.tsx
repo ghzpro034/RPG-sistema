@@ -38,7 +38,7 @@ export function TrazerPersonagem({ campanhaId, disponiveis }: { campanhaId: stri
             value={escolhido}
             onChange={(e) => setEscolhido(e.target.value)}
             aria-label="Personagem de outra mesa"
-            className="h-10 w-full rounded-lg border border-input bg-input/30 px-2.5 text-lg"
+            className="h-10 pointer-coarse:h-11 w-full rounded-lg border border-input bg-input/30 px-2.5 text-lg"
           >
             <option value="">Quem vem para esta mesa…</option>
             {disponiveis.map((d) => (

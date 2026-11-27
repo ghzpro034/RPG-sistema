@@ -41,7 +41,7 @@ function BarraEdicao() {
     );
   }
   return (
-    <div className="sticky top-0 z-10 -mx-4 flex items-center justify-end gap-3 border-b border-border/60 bg-background/90 px-4 py-2 backdrop-blur">
+    <div className="sticky top-0 z-10 -mx-4 flex items-center justify-end gap-3 border-b border-border/60 bg-background/90 px-4 py-1 backdrop-blur sm:py-2">
       <span className="flex items-center gap-1.5 text-base text-muted-foreground" aria-live="polite">
         {status === "salvando" && <Loader2 className="size-4 animate-spin" />}
         {TEXTO_STATUS[status]}

@@ -49,7 +49,7 @@ function EscolherGrupo({ nome, grupo, aoEscolher }: { nome: string; grupo: Grupo
           aria-label={valor ? `Grupo ${rotulo}` : "Fora dos grupos"}
           onClick={() => grupo !== valor && aoEscolher(valor)}
           className={cn(
-            "size-10 rounded-md border font-sans text-lg font-bold transition-colors",
+            "size-10 rounded-md border font-sans text-lg font-bold transition-colors pointer-coarse:size-11",
             grupo === valor ? "border-ouro bg-ouro text-primary-foreground" : "border-border text-muted-foreground hover:text-foreground",
           )}
         >
@@ -102,13 +102,13 @@ function Card({
       </div>
 
       <div className="flex items-center gap-2">
-        <Button variant="outline" className="size-10" aria-label={`Diminuir vida de ${p.nome}`} disabled={p.vida <= 0} onClick={() => aoMudarVida(p.vida - 1)}>
+        <Button variant="outline" className="size-10 pointer-coarse:size-11" aria-label={`Diminuir vida de ${p.nome}`} disabled={p.vida <= 0} onClick={() => aoMudarVida(p.vida - 1)}>
           <Minus />
         </Button>
         <span className="min-w-20 rounded-full bg-sangue px-3 py-0.5 text-center font-heading text-xl tabular-nums">
           {p.vida}/{p.vida_max}
         </span>
-        <Button variant="outline" className="size-10" aria-label={`Aumentar vida de ${p.nome}`} disabled={p.vida >= p.vida_max} onClick={() => aoMudarVida(p.vida + 1)}>
+        <Button variant="outline" className="size-10 pointer-coarse:size-11" aria-label={`Aumentar vida de ${p.nome}`} disabled={p.vida >= p.vida_max} onClick={() => aoMudarVida(p.vida + 1)}>
           <Plus />
         </Button>
         <div className="ml-1 h-2 flex-1 overflow-hidden rounded-full bg-secondary">
@@ -137,7 +137,7 @@ function Card({
         <AplicarDano personagemId={p.id} nome={p.nome} protecao={p.defesa} />
       </div>
 
-      <div className="flex items-center justify-between gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <span className="text-base text-muted-foreground">
           {p.itens} {p.itens === 1 ? "item" : "itens"}
         </span>
@@ -412,7 +412,11 @@ export function MesaAoVivo({ campanhaId, inicial }: { campanhaId: string; inicia
   const vezDe = combate?.sequencia[combate.vez]?.personagem_id ?? null;
 
   return (
-    <div className="grid grid-cols-[minmax(0,1fr)] gap-8 lg:grid-cols-[minmax(0,1fr)_340px]">
+    // o feed ao vivo fica ao lado já no tablet; no PC largo a Mesa usa até 1600 px (data-largura, ver o layout)
+    <div
+      data-largura="ampla"
+      className="grid grid-cols-[minmax(0,1fr)] gap-6 md:grid-cols-[minmax(0,1fr)_300px] lg:grid-cols-[minmax(0,1fr)_340px] lg:gap-8 2xl:grid-cols-[minmax(0,1fr)_400px]"
+    >
       <div className="flex flex-col gap-5">
         {personagens.length > 0 && <PainelCombate campanhaId={campanhaId} estado={combate} aoMudar={recarregarCombate} />}
         {pior && corrompido && (
@@ -436,7 +440,7 @@ export function MesaAoVivo({ campanhaId, inicial }: { campanhaId: string; inicia
           </div>
         )}
         {personagens.length ? (
-          <ul className="grid gap-4 md:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+          <ul className="grid gap-4 xl:grid-cols-2 2xl:grid-cols-3">
             {personagens.map((p) => (
               <Card
                 key={p.id}
